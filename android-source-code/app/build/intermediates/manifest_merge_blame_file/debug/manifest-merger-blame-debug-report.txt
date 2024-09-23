@@ -105,8 +105,8 @@
 84        android:extractNativeLibs="true"
 85        android:hardwareAccelerated="true"
 85-->C:\Users\Jonathan\Music\Bre\android-source-code\app\src\main\AndroidManifest.xml:73:9-43
-86        android:icon="@mipmap/ic_launcher"
-86-->C:\Users\Jonathan\Music\Bre\android-source-code\app\src\main\AndroidManifest.xml:70:9-43
+86        android:icon="@mipmap/icon"
+86-->C:\Users\Jonathan\Music\Bre\android-source-code\app\src\main\AndroidManifest.xml:70:9-36
 87        android:label="@string/app_name"
 87-->C:\Users\Jonathan\Music\Bre\android-source-code\app\src\main\AndroidManifest.xml:69:18-50
 88        android:testOnly="true"

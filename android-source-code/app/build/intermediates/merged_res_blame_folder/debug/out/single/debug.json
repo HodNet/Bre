@@ -1,22 +1,42 @@
 [
     {
-        "merged": "org.libsdl.app-merged_res-4:/mipmap-xxhdpi_ic_launcher.png.flat",
-        "source": "org.libsdl.app-main-6:/mipmap-xxhdpi/ic_launcher.png"
+        "merged": "org.libsdl.app-merged_res-4:/mipmap-xxxhdpi_icon.png.flat",
+        "source": "org.libsdl.app-main-6:/mipmap-xxxhdpi/icon.png"
     },
     {
-        "merged": "org.libsdl.app-merged_res-4:/mipmap-hdpi_ic_launcher.png.flat",
-        "source": "org.libsdl.app-main-6:/mipmap-hdpi/ic_launcher.png"
+        "merged": "C:\\Users\\Jonathan\\.gradle\\daemon\\8.1.1\\org.libsdl.app-merged_res-4:\\mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\Jonathan\\.gradle\\daemon\\8.1.1\\org.libsdl.app-main-6:\\mipmap-xhdpi\\ic_launcher.png"
     },
     {
-        "merged": "org.libsdl.app-merged_res-4:/mipmap-xhdpi_ic_launcher.png.flat",
-        "source": "org.libsdl.app-main-6:/mipmap-xhdpi/ic_launcher.png"
+        "merged": "C:\\Users\\Jonathan\\.gradle\\daemon\\8.1.1\\org.libsdl.app-merged_res-4:\\mipmap-mdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\Jonathan\\.gradle\\daemon\\8.1.1\\org.libsdl.app-main-6:\\mipmap-mdpi\\ic_launcher.png"
     },
     {
-        "merged": "org.libsdl.app-merged_res-4:/mipmap-mdpi_ic_launcher.png.flat",
-        "source": "org.libsdl.app-main-6:/mipmap-mdpi/ic_launcher.png"
+        "merged": "C:\\Users\\Jonathan\\.gradle\\daemon\\8.1.1\\org.libsdl.app-merged_res-4:\\mipmap-hdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\Jonathan\\.gradle\\daemon\\8.1.1\\org.libsdl.app-main-6:\\mipmap-hdpi\\ic_launcher.png"
     },
     {
-        "merged": "org.libsdl.app-merged_res-4:/mipmap-xxxhdpi_ic_launcher.png.flat",
-        "source": "org.libsdl.app-main-6:/mipmap-xxxhdpi/ic_launcher.png"
+        "merged": "C:\\Users\\Jonathan\\.gradle\\daemon\\8.1.1\\org.libsdl.app-merged_res-4:\\mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\Jonathan\\.gradle\\daemon\\8.1.1\\org.libsdl.app-main-6:\\mipmap-xxhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "org.libsdl.app-merged_res-4:/mipmap-hdpi_icon.png.flat",
+        "source": "org.libsdl.app-main-6:/mipmap-hdpi/icon.png"
+    },
+    {
+        "merged": "org.libsdl.app-merged_res-4:/mipmap-xxhdpi_icon.png.flat",
+        "source": "org.libsdl.app-main-6:/mipmap-xxhdpi/icon.png"
+    },
+    {
+        "merged": "org.libsdl.app-merged_res-4:/mipmap-mdpi_icon.png.flat",
+        "source": "org.libsdl.app-main-6:/mipmap-mdpi/icon.png"
+    },
+    {
+        "merged": "C:\\Users\\Jonathan\\.gradle\\daemon\\8.1.1\\org.libsdl.app-merged_res-4:\\mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\Jonathan\\.gradle\\daemon\\8.1.1\\org.libsdl.app-main-6:\\mipmap-xxxhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "org.libsdl.app-merged_res-4:/mipmap-xhdpi_icon.png.flat",
+        "source": "org.libsdl.app-main-6:/mipmap-xhdpi/icon.png"
     }
 ]

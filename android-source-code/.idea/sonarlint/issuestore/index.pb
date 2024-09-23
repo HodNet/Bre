@@ -9,9 +9,11 @@ F
 app/jni/Application.mk,3\0\304c42866d3b514123b3c1bc85bbc3290356d456
 F
 app/jni/src/Android.mk,c\9\c92fa24c8b61cede9fc2327c9f20879ab3ff1ed4
-L
-app/jni/src/YourSourceHere.c,c\9\c9f57ca340d58a0837db789a539057044adaaab8
 J
 app/jni/src/CMakeLists.txt,9\e\9e97dd21a141cd5bbc96ef3469ef2fcc942375c5
 @
 app/build.gradle,f\4\f4a01d6a4fcb971362ec00a83903fd3902f52164
+P
+ app/src/main/AndroidManifest.xml,8\c\8c55c3ccc257e5907959013f99656e4c8ec3903e
+N
+app/jni/src/YourSourceHere.cpp,1\6\1690be65edcf5a6659ade2f51f1c669d062b38ad

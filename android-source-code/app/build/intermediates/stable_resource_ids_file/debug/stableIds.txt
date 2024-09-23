@@ -1,4 +1,5 @@
 org.libsdl.app:mipmap/ic_launcher = 0x7f020000
+org.libsdl.app:mipmap/icon = 0x7f020001
 org.libsdl.app:style/AppTheme = 0x7f040000
 org.libsdl.app:color/colorPrimaryDark = 0x7f010002
 org.libsdl.app:color/colorAccent = 0x7f010000

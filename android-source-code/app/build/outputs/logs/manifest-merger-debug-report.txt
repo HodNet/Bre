@@ -64,7 +64,7 @@ INJECTED from C:\Users\Jonathan\Music\Bre\android-source-code\app\src\main\Andro
 	android:hardwareAccelerated
 		ADDED from C:\Users\Jonathan\Music\Bre\android-source-code\app\src\main\AndroidManifest.xml:73:9-43
 	android:icon
-		ADDED from C:\Users\Jonathan\Music\Bre\android-source-code\app\src\main\AndroidManifest.xml:70:9-43
+		ADDED from C:\Users\Jonathan\Music\Bre\android-source-code\app\src\main\AndroidManifest.xml:70:9-36
 	android:allowBackup
 		ADDED from C:\Users\Jonathan\Music\Bre\android-source-code\app\src\main\AndroidManifest.xml:71:9-35
 	android:theme

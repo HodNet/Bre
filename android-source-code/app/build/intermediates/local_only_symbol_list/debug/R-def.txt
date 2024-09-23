@@ -3,6 +3,6 @@ local
 color colorAccent
 color colorPrimary
 color colorPrimaryDark
-mipmap ic_launcher
+mipmap icon
 string app_name
 style AppTheme
