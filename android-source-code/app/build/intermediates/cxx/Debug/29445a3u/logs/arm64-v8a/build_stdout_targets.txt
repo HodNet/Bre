@@ -1,2 +1,0 @@
-make: Nothing to be done for 'SDL3'.
-make: Nothing to be done for 'main'.

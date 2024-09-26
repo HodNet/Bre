@@ -1,2 +1,0 @@
-C:\Users\Jonathan\Music\Bre\android-source-code\app\jni\Android.mk
-C:\Users\Jonathan\Music\Bre\android-source-code\app\jni\Application.mk

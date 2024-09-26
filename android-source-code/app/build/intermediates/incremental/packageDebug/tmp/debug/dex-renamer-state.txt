@@ -1,4 +1,0 @@
-#Mon Sep 23 21:46:42 CEST 2024
-base.0=C\:\\Users\\Jonathan\\Music\\Bre\\android-source-code\\app\\build\\intermediates\\dex\\debug\\mergeDexDebug\\classes.dex
-path.0=classes.dex
-renamed.0=classes.dex
