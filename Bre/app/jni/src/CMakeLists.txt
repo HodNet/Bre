@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.6)
 
 project(my_app LANGUAGES C CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Ensure libc++ is used
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lc++_shared -latomic")
 
 if(NOT TARGET SDL3::SDL3)
     find_package(SDL3 CONFIG)
@@ -27,4 +32,4 @@ add_library(main SHARED
         YourSourceHere.c
         Main.cpp
 )
-target_link_libraries(main PRIVATE SDL3::SDL3)
+target_link_libraries(main PRIVATE SDL3::SDL3 c++_shared atomic)

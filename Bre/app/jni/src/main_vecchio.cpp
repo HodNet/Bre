@@ -3,10 +3,10 @@
 #include "SDL_mixer.h"
 #include "SDL2_gfxPrimitives.h"
 #include "SDL_ttf.h"
-#include "Cronometro.h"
+#include "Cronometro.hpp"
 #include "SDLFunzioni.h"
 #include "SDLFreccia.h"
-#include "Clone.h"
+#include "model/Clone.h"
 #include "SDLPausa.h"
 #include "FPS.h"
 #include <vector>

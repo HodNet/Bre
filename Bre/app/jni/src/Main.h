@@ -5,6 +5,11 @@
 #ifndef BRE_MAIN_H
 #define BRE_MAIN_H
 
+/**
+ *  Per permettere ad un file C di poter leggere un progetto C++, è necessario creare un file .h, come
+ *  ponte tra i due linguaggi, che abbia esattamente la seguente sintassi:
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif

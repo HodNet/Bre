@@ -2,8 +2,8 @@
 // Created by jonat on 13/10/2020.
 //
 
-#ifndef BRE_CRONOMETRO_H
-#define BRE_CRONOMETRO_H
+#ifndef BRE_CRONOMETRO_HPP
+#define BRE_CRONOMETRO_HPP
 #include <chrono>
 #include <vector>
 
@@ -80,4 +80,4 @@ class Cronometro{
 };
 
 
-#endif //BRE_CRONOMETRO_H
+#endif //BRE_CRONOMETRO_HPP
