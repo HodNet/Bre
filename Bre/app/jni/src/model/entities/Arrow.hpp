@@ -8,6 +8,8 @@
 #include "../../controller/components/Point2D.hpp"
 #include "../../controller/components/Vector2D.hpp"
 
+#include <stdexcept>
+
 class Arrow {
     Point2D* center = nullptr;
     Vector2D* vector = nullptr;
@@ -20,6 +22,8 @@ public:
     }
 
     void setVector(int final_input_x, int final_input_y) {
+        if (center == nullptr)
+            return;
         vector = new Vector2D((final_input_x - center->x)/2, (final_input_y - center->y)/2);
     }
 
@@ -35,10 +39,10 @@ public:
         return Point2D(center->x + vector->x, center->y + vector->y);
     }
 
-    Vector2D* getDirection() const {
+    Vector2D getDirection() const {
         if(vector == nullptr)
-            return nullptr;
-        return new Vector2D(vector->normalize());
+            throw std::runtime_error("NullPointerException calling getDirection() in Arrow.hpp: Arrow vector not initialized.");
+        return Vector2D(vector->getNormalizedVector());
     }
 
     ~Arrow() {

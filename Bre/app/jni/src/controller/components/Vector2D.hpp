@@ -69,12 +69,16 @@ struct Vector2D {
         return sqrt(x * x + y * y);
     }
 
-    Vector2D normalize() const {
-        return *this / magnitude();
+    Vector2D getNormalizedVector() const {
+        return *this / getMagnitude();
     }
 
     double getAngle() const {
         return atan2(y, x);
+    }
+
+    double getAngleInDegrees() const {
+        return atan2(y, x) * 180 / M_PI;
     }
 };
 

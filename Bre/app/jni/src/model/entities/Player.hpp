@@ -1,8 +1,6 @@
 #ifndef BRE_PLAYER_HPP
 #define BRE_PLAYER_HPP
 
-#include <SDL3/SDL.h>
-
 #include "../../controller/components/Vector2D.hpp"
 #include "../../controller/components/Rectangle.hpp"
 
@@ -32,7 +30,7 @@ public:
 
     static Player* getInstance() {
         if (instance == nullptr) {
-            SDL_Log("NullPointerException: Player instance not initialized. Call getInstance(unsigned int, unsigned int) first.");
+            throw std::runtime_error("NullPointerException: Player instance not initialized. Call getInstance(unsigned int, unsigned int) first.");
         }
         return instance;
     }

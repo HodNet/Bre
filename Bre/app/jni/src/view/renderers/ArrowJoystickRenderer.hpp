@@ -33,13 +33,17 @@ class ArrowJoystickRenderer {
 public:
     ArrowJoystickRenderer(SDL_Renderer *renderer) : renderer(renderer) {
         SRFcenter = SDL_LoadBMP("center_arrow.bmp");
-        TXRcenter = SDL_CreateTextureFromSurface(renderer, SRFcenter);
         SRFbody = SDL_LoadBMP("body_arrow.bmp");
-        TXRbody = SDL_CreateTextureFromSurface(renderer, SRFbody);
         SRFtip = SDL_LoadBMP("tip_arrow.bmp");
-        TXRtip = SDL_CreateTextureFromSurface(renderer, SRFtip);
-        if (TXRcenter == NULL || TXRbody == NULL || TXRtip == NULL)
-            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not load arrow textures: %s\n", SDL_GetError());
+        if (SRFcenter == NULL || SRFbody == NULL || SRFtip == NULL)
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not load arrow surfaces: %s\n", SDL_GetError());
+        else {
+            TXRcenter = SDL_CreateTextureFromSurface(renderer, SRFcenter);
+            TXRbody = SDL_CreateTextureFromSurface(renderer, SRFbody);
+            TXRtip = SDL_CreateTextureFromSurface(renderer, SRFtip);
+            if (TXRcenter == NULL || TXRbody == NULL || TXRtip == NULL)
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not load arrow textures: %s\n", SDL_GetError());
+        }
     }
 
     void buildCenter(int input_x, int input_y) {
@@ -60,7 +64,7 @@ public:
 
         if(arrow->getCenter() != nullptr) {
             arrow->setVector(input_x, input_y);
-            angle = arrow->getVector()->getAngle();
+            angle = arrow->getVector()->getAngleInDegrees();
 
             DSTbody.h = 2*arrow->getVector()->getMagnitude();
             DSTbody.x = arrow->getCenter()->x;
@@ -92,6 +96,10 @@ public:
         SDL_DestroyTexture(TXRcenter);
         SDL_DestroyTexture(TXRbody);
         SDL_DestroyTexture(TXRtip);
+    }
+
+    ~ArrowJoystickRenderer() {
+        destroy();
     }
 };
 
