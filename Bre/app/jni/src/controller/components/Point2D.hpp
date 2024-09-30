@@ -13,6 +13,7 @@ struct Point2D {
 
     Point2D() : x(0), y(0) {}
     Point2D(unsigned short int x, unsigned short int y) : x(x), y(y) {}
+    Point2D(const Point2D& p) : x(p.x), y(p.y) {}
 
     Point2D& operator=(const Point2D& p) {
         x = p.x;

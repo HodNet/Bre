@@ -13,6 +13,7 @@ struct Vector2D {
 
     Vector2D() : x(0), y(0) {}
     Vector2D(float x, float y) : x(x), y(y) {}
+    Vector2D(const Vector2D& v) : x(v.x), y(v.y) {}
 
     Vector2D& operator=(const Vector2D& v) {
         x = v.x;
@@ -64,12 +65,16 @@ struct Vector2D {
         return x * v.x + y * v.y;
     }
 
-    float magnitude() const {
+    float getMagnitude() const {
         return sqrt(x * x + y * y);
     }
 
-    void normalize() {
-        *this /= magnitude();
+    Vector2D normalize() const {
+        return *this / magnitude();
+    }
+
+    double getAngle() const {
+        return atan2(y, x);
     }
 };
 

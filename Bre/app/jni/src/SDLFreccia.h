@@ -36,7 +36,7 @@ public:
 
     Freccia(SDL_Renderer *renderer) : renderer(renderer)
     {
-        TXRcoda = IMG_LoadTexture(renderer, "coda freccia.png");
+        TXRcoda = IMG_LoadTexture(renderer, "center_arrow.png");
         TXRcorpo = IMG_LoadTexture(renderer, "corpo freccia.png");
         TXRpunta = IMG_LoadTexture(renderer, "punta freccia.png");
         if (TXRcoda == NULL || TXRcorpo == NULL || TXRpunta == NULL) SDL_Log("problemi con texture della freccia: %s", SDL_GetError());
@@ -45,7 +45,7 @@ public:
     void NewRenderer(SDL_Renderer *renderer)
     {
         this->renderer = renderer;
-        TXRcoda = IMG_LoadTexture(renderer, "coda freccia.png");
+        TXRcoda = IMG_LoadTexture(renderer, "center_arrow.png");
         TXRcorpo = IMG_LoadTexture(renderer, "corpo freccia.png");
         TXRpunta = IMG_LoadTexture(renderer, "punta freccia.png");
         if (TXRcoda == NULL || TXRcorpo == NULL || TXRpunta == NULL) SDL_Log("problemi con texture della freccia: %s", SDL_GetError());
