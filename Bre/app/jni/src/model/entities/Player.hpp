@@ -5,7 +5,7 @@
 #include "../../controller/components/Rectangle.hpp"
 
 /**
- * Singleton class representing the main player. There can only be one istance of the player at a time.
+ * Singleton class representing the main player. There can only be one instance of the player at a time.
  */
 class Player {
     Rectangle rect;
@@ -24,13 +24,6 @@ public:
     static Player* getInstance(unsigned int screen_w, unsigned int screen_h) {
         if (instance == nullptr) {
             instance = new Player(screen_w, screen_h);
-        }
-        return instance;
-    }
-
-    static Player* getInstance() {
-        if (instance == nullptr) {
-            throw std::runtime_error("NullPointerException: Player instance not initialized. Call getInstance(unsigned int, unsigned int) first.");
         }
         return instance;
     }

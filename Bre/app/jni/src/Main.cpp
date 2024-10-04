@@ -3,10 +3,16 @@
 //
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
-#include "view/activities/GameActivity.hpp"
+#include "view/activities/FreePlayActivity.hpp"
 
 // Singleton declarations
 Player* Player::instance = nullptr;
+
+// Static objects declarations
+const Rectangle* World::screenSize = nullptr;
+Player* World::player = nullptr;
+StopWatch* World::gameTimer = nullptr;
+Arrow* World::joystick = nullptr;
 
 class Main {
 
@@ -17,6 +23,7 @@ public:
     static int main_in_cpp() {
         if (!SDL_Init(SDL_INIT_EVENTS | SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_Init failed (%s)", SDL_GetError());
+            SDL_Quit();
             return 1;
         }
 
@@ -30,12 +37,13 @@ public:
         const SDL_DisplayMode* screen = SDL_GetCurrentDisplayMode(1);
         if (screen == NULL) {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_GetCurrentDisplayMode failed (%s)", SDL_GetError());
+            SDL_Quit();
             return 1;
         } else {
             SDL_Log("Screen resolution: %dx%d", screen->w, screen->h);
         }
 
-        GameActivity gameActivity(screen);
+        FreePlayActivity gameActivity(screen);
         gameActivity.run();
 
         SDL_Quit();

@@ -6,7 +6,7 @@
 #include "Cronometro.hpp"
 #include "SDLFunzioni.h"
 #include "SDLFreccia.h"
-#include "model/Clone.h"
+#include "Clone.h"
 #include "SDLPausa.h"
 #include "FPS.h"
 #include <vector>
