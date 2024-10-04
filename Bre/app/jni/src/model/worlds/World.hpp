@@ -16,7 +16,6 @@
  * All the entities should be static, so they can be accessed from anywhere in the code.
  * All the entities should be private and accessible with getters and setters.
  *
- *
  */
 class World{
 protected:
