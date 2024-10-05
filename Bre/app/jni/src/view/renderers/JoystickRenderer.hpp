@@ -6,11 +6,13 @@
 #define BRE_JOYSTICKRENDERER_HPP
 
 #include <SDL3/SDL.h>
+#include <SDL3_Image/SDL_image.h>
 
 #include "../../controller/components/Rectangle.hpp"
 #include "../../model/entities/Arrow.hpp"
 #include "Renderer.hpp"
 #include "../../model/worlds/FreePlayWorld.hpp"
+#include "../../../SDL_image/include/SDL3_image/SDL_image.h"
 
 
 class JoystickRenderer : public Renderer {
@@ -36,27 +38,11 @@ class JoystickRenderer : public Renderer {
 public:
     JoystickRenderer() = default;
     JoystickRenderer(SDL_Renderer *renderer) : renderer(renderer) {
-        SRFcenter = SDL_LoadBMP("center_arrow.bmp");
-        SRFbody = SDL_LoadBMP("body_arrow.bmp");
-        SRFtip = SDL_LoadBMP("tip_arrow.bmp");
-        if (SRFcenter == NULL || SRFbody == NULL || SRFtip == NULL) {
-            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not load joystick surfaces: %s\n", SDL_GetError());
-        } else {
-            SDL_Log("Joystick surfaces loaded successfully");
-        }
-
-        TXRcenter = SDL_CreateTextureFromSurface(renderer, SRFcenter);
-        if(TXRcenter == NULL) {
-            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not load joystick textures: %s\n", SDL_GetError());
-        }
-        TXRbody = SDL_CreateTextureFromSurface(renderer, SRFbody);
-        if(TXRbody == NULL) {
-            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not load joystick textures: %s\n", SDL_GetError());
-        }
-        TXRtip = SDL_CreateTextureFromSurface(renderer, SRFtip);
-        if(TXRtip == NULL) {
-            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not load joystick textures: %s\n", SDL_GetError());
-        }
+        TXRcenter = IMG_LoadTexture(renderer, "center_arrow.png");
+        TXRbody = IMG_LoadTexture(renderer, "body_arrow.png");
+        TXRtip = IMG_LoadTexture(renderer, "tip_arrow.png");
+        if (TXRcenter == NULL || TXRbody == NULL || TXRtip == NULL)
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "JoystickRenderer: Failed to load textures: %s", SDL_GetError());
     }
 
     /**
@@ -132,12 +118,14 @@ public:
     void destroy() override {
         joystick = nullptr; // The world will take care of deleting the joystick
 
-        SDL_DestroySurface(SRFcenter);
-        SDL_DestroySurface(SRFbody);
-        SDL_DestroySurface(SRFtip);
-        SRFcenter = nullptr;
-        SRFbody = nullptr;
-        SRFtip = nullptr;
+        if(SRFcenter != nullptr && SRFbody != nullptr && SRFtip != nullptr) {
+            SDL_DestroySurface(SRFcenter);
+            SDL_DestroySurface(SRFbody);
+            SDL_DestroySurface(SRFtip);
+            SRFcenter = nullptr;
+            SRFbody = nullptr;
+            SRFtip = nullptr;
+        }
 
         if(TXRcenter != nullptr && TXRbody != nullptr && TXRtip != nullptr) {
             SDL_DestroyTexture(TXRcenter);
@@ -147,10 +135,6 @@ public:
             TXRbody = nullptr;
             TXRtip = nullptr;
         }
-    }
-
-    ~JoystickRenderer() {
-        destroy();
     }
 };
 

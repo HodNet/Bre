@@ -26,7 +26,7 @@ JXL_LIBRARY_PATH := external/libjxl
 
 # Enable this if you want to support loading PNG images using libpng
 # The library path should be a relative path to this directory.
-SUPPORT_PNG ?= false
+SUPPORT_PNG ?= true
 SUPPORT_SAVE_PNG ?= true
 PNG_LIBRARY_PATH := external/libpng
 
