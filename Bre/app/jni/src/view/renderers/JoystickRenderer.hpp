@@ -6,13 +6,12 @@
 #define BRE_JOYSTICKRENDERER_HPP
 
 #include <SDL3/SDL.h>
-#include <SDL3_Image/SDL_image.h>
+#include <SDL3_image/SDL_image.h>
 
 #include "../../controller/components/Rectangle.hpp"
 #include "../../model/entities/Arrow.hpp"
 #include "Renderer.hpp"
 #include "../../model/worlds/FreePlayWorld.hpp"
-#include "../../../SDL_image/include/SDL3_image/SDL_image.h"
 
 
 class JoystickRenderer : public Renderer {
