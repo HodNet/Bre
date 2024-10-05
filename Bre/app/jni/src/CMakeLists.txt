@@ -28,25 +28,25 @@ Possible ways to fix this:
 ")
 endif()
 
-# Same but for SDL3_Image
-if(NOT TARGET SDL3_Image::SDL3_Image)
-    find_package(SDL3_Image CONFIG)
+# Same but for SDL3_image
+if(NOT TARGET SDL3_image::SDL3_image)
+    find_package(SDL3_image CONFIG)
 endif()
 
-if(NOT TARGET SDL3_Image::SDL3_Image)
-    find_library(SDL3_Image_LIBRARY NAMES "SDL3_Image")
-    find_path(SDL3_Image_INCLUDE_DIR NAMES "SDL3_Image/SDL_Image.h")
-    add_library(SDL3_Image::SDL3_Image UNKNOWN IMPORTED)
-    set_property(TARGET SDL3_Image::SDL3_Image PROPERTY IMPORTED_LOCATION "${SDL3_Image_LIBRARY}")
-    set_property(TARGET SDL3_Image::SDL3_Image PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${SDL3_Image_INCLUDE_DIR}")
+if(NOT TARGET SDL3_image::SDL3_image)
+    find_library(SDL3_image_LIBRARY NAMES "SDL3_image")
+    find_path(SDL3_image_INCLUDE_DIR NAMES "SDL3_image/SDL_image.h")
+    add_library(SDL3_image::SDL3_image UNKNOWN IMPORTED)
+    set_property(TARGET SDL3_image::SDL3_image PROPERTY IMPORTED_LOCATION "${SDL3_image_LIBRARY}")
+    set_property(TARGET SDL3_image::SDL3_image PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${SDL3_image_INCLUDE_DIR}")
 endif()
 
-if(NOT TARGET SDL3_Image::SDL3_Image)
-    message(FATAL_ERROR "Cannot find SDL3_Image.")
+if(NOT TARGET SDL3_image::SDL3_image)
+    message(FATAL_ERROR "Cannot find SDL3_image.")
 endif()
 
 add_library(main SHARED
         YourSourceHere.c
         Main.cpp
 )
-target_link_libraries(main PRIVATE SDL3::SDL3 SDL3_Image::SDL3_Image c++_shared atomic)
+target_link_libraries(main PRIVATE SDL3::SDL3 SDL3_image::SDL3_image c++_shared atomic)
