@@ -3,6 +3,7 @@
 //
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include <SDL3_image/SDL_image.h>
 #include "view/activities/FreePlayActivity.hpp"
 
 // Singleton declarations
@@ -25,6 +26,14 @@ public:
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_Init failed (%s)", SDL_GetError());
             SDL_Quit();
             return 1;
+        }
+
+        if (!IMG_Init(IMG_INIT_PNG)) {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "IMG_Init failed.");
+            SDL_Quit();
+            return 1;
+        } else {
+            SDL_Log("IMG_Init success.");
         }
 
         /*
