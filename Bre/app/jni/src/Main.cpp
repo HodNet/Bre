@@ -59,7 +59,7 @@ public:
             return 1;
         }
 
-        if (!IMG_Init(IMG_INIT_PNG)) {
+        if (!IMG_Init(IMG_INIT_PNG | IMG_INIT_JPG)) {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "IMG_Init failed.");
             SDL_Quit();
             return 1;
@@ -141,11 +141,12 @@ public:
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not load texture: %s\n", SDL_GetError());
         */
 
-
+        /*
         //  ATTEMPT 2
         SDL_Texture* texture = IMG_LoadTexture(renderer, "center_arrow.png");
         if (texture == NULL)
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not load texture: %s\n", SDL_GetError());
+        */
 
         /*
         //  ATTEMPT 3
@@ -203,6 +204,13 @@ public:
                          "Couldn't load texture: %s", SDL_GetError());
         }
         */
+
+
+        //  ATTEMPT 7
+        SDL_Texture* texture = IMG_LoadTexture(renderer, "Phone_Sized_Image.jpg");
+        if (texture == NULL)
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not load texture: %s\n", SDL_GetError());
+
 
         while(false) {
             SDL_Event e;
