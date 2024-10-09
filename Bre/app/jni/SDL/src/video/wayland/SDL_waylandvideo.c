@@ -63,6 +63,7 @@
 #include "xdg-foreign-unstable-v2-client-protocol.h"
 #include "xdg-output-unstable-v1-client-protocol.h"
 #include "xdg-shell-client-protocol.h"
+#include "xdg-toplevel-icon-v1-client-protocol.h"
 
 #ifdef HAVE_LIBDECOR_H
 #include <libdecor.h>
@@ -546,9 +547,11 @@ static SDL_VideoDevice *Wayland_CreateDevice(bool require_preferred_protocols)
     device->SetWindowSize = Wayland_SetWindowSize;
     device->SetWindowMinimumSize = Wayland_SetWindowMinimumSize;
     device->SetWindowMaximumSize = Wayland_SetWindowMaximumSize;
-    device->SetWindowModalFor = Wayland_SetWindowModalFor;
+    device->SetWindowParent = Wayland_SetWindowParent;
+    device->SetWindowModal = Wayland_SetWindowModal;
     device->SetWindowOpacity = Wayland_SetWindowOpacity;
     device->SetWindowTitle = Wayland_SetWindowTitle;
+    device->SetWindowIcon = Wayland_SetWindowIcon;
     device->GetWindowSizeInPixels = Wayland_GetWindowSizeInPixels;
     device->GetDisplayForWindow = Wayland_GetDisplayForWindow;
     device->DestroyWindow = Wayland_DestroyWindow;
@@ -892,7 +895,7 @@ static void display_handle_done(void *data,
             // ...and the compositor scales the logical viewport...
             if (video->viewporter) {
                 // ...and viewports are supported, calculate the true scale of the output.
-                internal->scale_factor = (float)native_mode.w / (float)internal->screen_width;
+                internal->scale_factor = (double)native_mode.w / (double)internal->screen_width;
             } else {
                 // ...otherwise, the 'native' pixel values are a multiple of the logical screen size.
                 internal->pixel_width = internal->screen_width * (int)internal->scale_factor;
@@ -920,7 +923,7 @@ static void display_handle_done(void *data,
     if (!video->scale_to_display_enabled) {
         desktop_mode.w = internal->screen_width;
         desktop_mode.h = internal->screen_height;
-        desktop_mode.pixel_density = internal->scale_factor;
+        desktop_mode.pixel_density = (float)internal->scale_factor;
     } else {
         desktop_mode.w = native_mode.w;
         desktop_mode.h = native_mode.h;
@@ -937,14 +940,14 @@ static void display_handle_done(void *data,
     }
 
     if (video->scale_to_display_enabled) {
-        SDL_SetDisplayContentScale(dpy, internal->scale_factor);
+        SDL_SetDisplayContentScale(dpy, (float)internal->scale_factor);
     }
 
     // Set the desktop display mode.
     SDL_SetDesktopDisplayMode(dpy, &desktop_mode);
 
     // Expose the unscaled, native resolution if the scale is 1.0 or viewports are available...
-    if (internal->scale_factor == 1.0f || video->viewporter) {
+    if (internal->scale_factor == 1.0 || video->viewporter) {
         SDL_AddFullscreenDisplayMode(dpy, &native_mode);
     } else {
         // ...otherwise expose the integer scaled variants of the desktop resolution down to 1.
@@ -1191,6 +1194,8 @@ static void display_handle_global(void *data, struct wl_registry *registry, uint
         d->xdg_wm_dialog_v1 = wl_registry_bind(d->registry, id, &xdg_wm_dialog_v1_interface, 1);
     } else if (SDL_strcmp(interface, "wp_alpha_modifier_v1") == 0) {
         d->wp_alpha_modifier_v1 = wl_registry_bind(d->registry, id, &wp_alpha_modifier_v1_interface, 1);
+    } else if (SDL_strcmp(interface, "xdg_toplevel_icon_manager_v1") == 0) {
+        d->xdg_toplevel_icon_manager_v1 = wl_registry_bind(d->registry, id, &xdg_toplevel_icon_manager_v1_interface, 1);
     } else if (SDL_strcmp(interface, "kde_output_order_v1") == 0) {
         d->kde_output_order = wl_registry_bind(d->registry, id, &kde_output_order_v1_interface, 1);
         kde_output_order_v1_add_listener(d->kde_output_order, &kde_output_order_listener, d);
@@ -1458,6 +1463,11 @@ static void Wayland_VideoCleanup(SDL_VideoDevice *_this)
     if (data->wp_alpha_modifier_v1) {
         wp_alpha_modifier_v1_destroy(data->wp_alpha_modifier_v1);
         data->wp_alpha_modifier_v1 = NULL;
+    }
+
+    if (data->xdg_toplevel_icon_manager_v1) {
+        xdg_toplevel_icon_manager_v1_destroy(data->xdg_toplevel_icon_manager_v1);
+        data->xdg_toplevel_icon_manager_v1 = NULL;
     }
 
     if (data->kde_output_order) {

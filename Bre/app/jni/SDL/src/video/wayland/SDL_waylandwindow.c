@@ -42,29 +42,30 @@
 #include "xdg-foreign-unstable-v2-client-protocol.h"
 #include "xdg-dialog-v1-client-protocol.h"
 #include "frog-color-management-v1-client-protocol.h"
+#include "xdg-toplevel-icon-v1-client-protocol.h"
 
 #ifdef HAVE_LIBDECOR_H
 #include <libdecor.h>
 #endif
 
-/* These are *NOT* roundtrip safe! */
+static double GetWindowScale(SDL_Window *window)
+{
+    return (window->flags & SDL_WINDOW_HIGH_PIXEL_DENSITY) || window->internal->scale_to_display ? window->internal->scale_factor : 1.0;
+}
+
+// These are point->pixel->point round trip safe; the inverse is not round trip safe due to rounding.
 static int PointToPixel(SDL_Window *window, int point)
 {
-    // Rounds halfway away from zero as per the Wayland fractional scaling protocol spec.
-    return (int)SDL_lroundf((float)point * window->internal->windowed_scale_factor);
+    /* Rounds halfway away from zero as per the Wayland fractional scaling protocol spec.
+     * Wayland scale units are in units of 1/120, so the offset is required to correct for
+     * rounding errors when using certain scale values.
+     */
+    return SDL_max((int)SDL_lround((double)point * GetWindowScale(window) + 1e-6), 1);
 }
 
 static int PixelToPoint(SDL_Window *window, int pixel)
 {
-    return (int)SDL_lroundf((float)pixel / window->internal->windowed_scale_factor);
-}
-
-static bool FloatEqual(float a, float b)
-{
-    const float diff = SDL_fabsf(a - b);
-    const float largest = SDL_max(SDL_fabsf(a), SDL_fabsf(b));
-
-    return diff <= largest * SDL_FLT_EPSILON;
+    return SDL_max((int)SDL_lround((double)pixel / GetWindowScale(window)), 1);
 }
 
 /* According to the Wayland spec:
@@ -299,6 +300,7 @@ static void SetSurfaceOpaqueRegion(SDL_WindowData *wind, bool is_opaque)
 static void ConfigureWindowGeometry(SDL_Window *window)
 {
     SDL_WindowData *data = window->internal;
+    const double scale_factor = GetWindowScale(window);
     const int old_pixel_width = data->current.pixel_width;
     const int old_pixel_height = data->current.pixel_height;
     int window_width, window_height;
@@ -371,8 +373,8 @@ static void ConfigureWindowGeometry(SDL_Window *window)
                 data->current.logical_height = window->current_fullscreen_mode.h;
             }
 
-            data->pointer_scale.x = (float)window_width / (float)data->current.logical_width;
-            data->pointer_scale.y = (float)window_height / (float)data->current.logical_height;
+            data->pointer_scale.x = (double)window_width / (double)data->current.logical_width;
+            data->pointer_scale.y = (double)window_height / (double)data->current.logical_height;
         }
     } else {
         window_width = data->requested.logical_width;
@@ -385,7 +387,7 @@ static void ConfigureWindowGeometry(SDL_Window *window)
                 wp_viewport_set_destination(data->viewport, window_width, window_height);
             } else if (window->flags & SDL_WINDOW_HIGH_PIXEL_DENSITY) {
                 // Don't change this if the DPI awareness flag is unset, as an application may have set this manually on a custom or external surface.
-                wl_surface_set_buffer_scale(data->surface, (int32_t)data->windowed_scale_factor);
+                wl_surface_set_buffer_scale(data->surface, (int32_t)scale_factor);
             }
 
             // Clamp the physical window size to the system minimum required size.
@@ -393,11 +395,11 @@ static void ConfigureWindowGeometry(SDL_Window *window)
             data->current.logical_height = SDL_max(window_height, data->system_limits.min_height);
 
             if (!data->scale_to_display) {
-                data->pointer_scale.x = 1.0f;
-                data->pointer_scale.y = 1.0f;
+                data->pointer_scale.x = 1.0;
+                data->pointer_scale.y = 1.0;
             } else {
-                data->pointer_scale.x = data->windowed_scale_factor;
-                data->pointer_scale.y = data->windowed_scale_factor;
+                data->pointer_scale.x = scale_factor;
+                data->pointer_scale.y = scale_factor;
             }
         }
     }
@@ -621,12 +623,12 @@ static void UpdateWindowFullscreen(SDL_Window *window, bool fullscreen)
             SDL_UpdateFullscreenMode(window, SDL_FULLSCREEN_OP_ENTER, false);
 
             /* Set the output for exclusive fullscreen windows when entering fullscreen from a
-             * compositor event, or if the fullscreen paramaters were changed between the initial
+             * compositor event, or if the fullscreen parameters were changed between the initial
              * fullscreen request and now, to ensure that the window is on the correct output,
              * as requested by the client.
              */
             if (window->fullscreen_exclusive && (!wind->fullscreen_exclusive || !wind->fullscreen_was_positioned)) {
-                SDL_VideoDisplay *disp = SDL_GetVideoDisplay(window->current_fullscreen_mode.display);
+                SDL_VideoDisplay *disp = SDL_GetVideoDisplay(window->current_fullscreen_mode.displayID);
                 if (disp) {
                     wind->fullscreen_was_positioned = true;
                     SetFullscreen(window, disp->internal->output);
@@ -671,8 +673,11 @@ static void surface_frame_done(void *data, struct wl_callback *cb, uint32_t time
         for (SDL_Window *w = wind->sdlwindow->first_child; w; w = w->next_sibling) {
             if (w->internal->surface_status == WAYLAND_SURFACE_STATUS_SHOW_PENDING) {
                 Wayland_ShowWindow(SDL_GetVideoDevice(), w);
-            } else if ((w->flags & SDL_WINDOW_MODAL) && w->internal->modal_reparenting_required) {
-                Wayland_SetWindowModalFor(SDL_GetVideoDevice(), w, w->parent);
+            } else if (w->internal->reparenting_required) {
+                Wayland_SetWindowParent(SDL_GetVideoDevice(), w, w->parent);
+                if (w->flags & SDL_WINDOW_MODAL) {
+                    Wayland_SetWindowModal(SDL_GetVideoDevice(), w, true);
+                }
             }
         }
 
@@ -698,7 +703,7 @@ static const struct wl_callback_listener gles_swap_frame_listener;
 static void gles_swap_frame_done(void *data, struct wl_callback *cb, uint32_t time)
 {
     SDL_WindowData *wind = (SDL_WindowData *)data;
-    SDL_AtomicSet(&wind->swap_interval_ready, 1); // mark window as ready to present again.
+    SDL_SetAtomicInt(&wind->swap_interval_ready, 1); // mark window as ready to present again.
 
     // reset this callback to fire again once a new frame was presented and compositor wants the next one.
     wind->gles_swap_frame_callback = wl_surface_frame(wind->gles_swap_frame_surface_wrapper);
@@ -1342,22 +1347,17 @@ static struct libdecor_frame_interface libdecor_frame_interface = {
 };
 #endif
 
-static void Wayland_HandlePreferredScaleChanged(SDL_WindowData *window_data, float factor)
+static void Wayland_HandlePreferredScaleChanged(SDL_WindowData *window_data, double factor)
 {
-    const float old_factor = window_data->windowed_scale_factor;
-
-    if (!(window_data->sdlwindow->flags & SDL_WINDOW_HIGH_PIXEL_DENSITY) && !window_data->scale_to_display) {
-        // Scale will always be 1, just ignore this
-        return;
-    }
+    const double old_factor = window_data->scale_factor;
 
     // Round the scale factor if viewports aren't available.
     if (!window_data->viewport) {
-        factor = SDL_ceilf(factor);
+        factor = SDL_ceil(factor);
     }
 
-    if (!FloatEqual(factor, old_factor)) {
-        window_data->windowed_scale_factor = factor;
+    if (factor != old_factor) {
+        window_data->scale_factor = factor;
 
         if (window_data->scale_to_display) {
             /* If the window is in the floating state with a user/application specified size, calculate the new
@@ -1373,14 +1373,16 @@ static void Wayland_HandlePreferredScaleChanged(SDL_WindowData *window_data, flo
             }
         }
 
-        ConfigureWindowGeometry(window_data->sdlwindow);
-        CommitLibdecorFrame(window_data->sdlwindow);
+        if (window_data->sdlwindow->flags & SDL_WINDOW_HIGH_PIXEL_DENSITY || window_data->scale_to_display) {
+            ConfigureWindowGeometry(window_data->sdlwindow);
+            CommitLibdecorFrame(window_data->sdlwindow);
+        }
     }
 }
 
 static void Wayland_MaybeUpdateScaleFactor(SDL_WindowData *window)
 {
-    float factor;
+    double factor;
     int i;
 
     /* If the fractional scale protocol is present or the core protocol supports the
@@ -1394,14 +1396,14 @@ static void Wayland_MaybeUpdateScaleFactor(SDL_WindowData *window)
 
     if (window->num_outputs != 0) {
         // Check every display's factor, use the highest
-        factor = 0.0f;
+        factor = 0.0;
         for (i = 0; i < window->num_outputs; i++) {
             SDL_DisplayData *internal = window->outputs[i];
             factor = SDL_max(factor, internal->scale_factor);
         }
     } else {
         // All outputs removed, just fall back.
-        factor = window->windowed_scale_factor;
+        factor = window->scale_factor;
     }
 
     Wayland_HandlePreferredScaleChanged(window, factor);
@@ -1477,7 +1479,7 @@ static void handle_preferred_buffer_scale(void *data, struct wl_surface *wl_surf
      * only listen to this event if the fractional scaling protocol is not present.
      */
     if (!wind->fractional_scale) {
-        Wayland_HandlePreferredScaleChanged(data, (float)factor);
+        Wayland_HandlePreferredScaleChanged(data, (double)factor);
     }
 }
 
@@ -1495,7 +1497,7 @@ static const struct wl_surface_listener surface_listener = {
 
 static void handle_preferred_fractional_scale(void *data, struct wp_fractional_scale_v1 *wp_fractional_scale_v1, uint32_t scale)
 {
-    const float factor = scale / 120.f; // 120 is a magic number defined in the spec as a common denominator
+    const double factor = (double)scale / 120.; // 120 is a magic number defined in the spec as a common denominator
     Wayland_HandlePreferredScaleChanged(data, factor);
 }
 
@@ -1563,58 +1565,75 @@ bool Wayland_SetWindowHitTest(SDL_Window *window, bool enabled)
     return true; // just succeed, the real work is done elsewhere.
 }
 
-bool Wayland_SetWindowModalFor(SDL_VideoDevice *_this, SDL_Window *modal_window, SDL_Window *parent_window)
+static struct xdg_toplevel *GetToplevelForWindow(SDL_WindowData *wind)
 {
-    SDL_VideoData *viddata = _this->internal;
-    SDL_WindowData *modal_data = modal_window->internal;
-    SDL_WindowData *parent_data = parent_window ? parent_window->internal : NULL;
-    struct xdg_toplevel *modal_toplevel = NULL;
-    struct xdg_toplevel *parent_toplevel = NULL;
+    if (wind) {
+        /* Libdecor crashes on attempts to unset the parent by passing null, which is allowed by the
+         * toplevel spec, so just use the raw xdg-toplevel instead (that's what libdecor does
+         * internally anyways).
+         */
+#ifdef HAVE_LIBDECOR_H
+        if (wind->shell_surface_type == WAYLAND_SURFACE_LIBDECOR && wind->shell_surface.libdecor.frame) {
+            return libdecor_frame_get_xdg_toplevel(wind->shell_surface.libdecor.frame);
+        } else
+#endif
+            if (wind->shell_surface_type == WAYLAND_SURFACE_XDG_TOPLEVEL && wind->shell_surface.xdg.roleobj.toplevel) {
+                return wind->shell_surface.xdg.roleobj.toplevel;
+            }
+    }
 
-    modal_data->modal_reparenting_required = false;
+    return NULL;
+}
+
+bool Wayland_SetWindowParent(SDL_VideoDevice *_this, SDL_Window *window, SDL_Window *parent_window)
+{
+    SDL_WindowData *child_data = window->internal;
+    SDL_WindowData *parent_data = parent_window ? parent_window->internal : NULL;
+
+    child_data->reparenting_required = false;
 
     if (parent_data && parent_data->surface_status != WAYLAND_SURFACE_STATUS_SHOWN) {
         // Need to wait for the parent to become mapped, or it's the same as setting a null parent.
-        modal_data->modal_reparenting_required = true;
+        child_data->reparenting_required = true;
         return true;
     }
 
-    /* Libdecor crashes on attempts to unset the parent by passing null, which is allowed by the
-     * toplevel spec, so just use the raw xdg-toplevel instead (that's what libdecor does
-     * internally anyways).
-     */
-#ifdef HAVE_LIBDECOR_H
-    if (modal_data->shell_surface_type == WAYLAND_SURFACE_LIBDECOR && modal_data->shell_surface.libdecor.frame) {
-        modal_toplevel = libdecor_frame_get_xdg_toplevel(modal_data->shell_surface.libdecor.frame);
-    } else
-#endif
-        if (modal_data->shell_surface_type == WAYLAND_SURFACE_XDG_TOPLEVEL && modal_data->shell_surface.xdg.roleobj.toplevel) {
-        modal_toplevel = modal_data->shell_surface.xdg.roleobj.toplevel;
+    struct xdg_toplevel *child_toplevel = GetToplevelForWindow(child_data);
+    struct xdg_toplevel *parent_toplevel = GetToplevelForWindow(parent_data);
+
+    if (child_toplevel) {
+        xdg_toplevel_set_parent(child_toplevel, parent_toplevel);
     }
 
-    if (parent_data) {
-#ifdef HAVE_LIBDECOR_H
-        if (parent_data->shell_surface_type == WAYLAND_SURFACE_LIBDECOR && parent_data->shell_surface.libdecor.frame) {
-            parent_toplevel = libdecor_frame_get_xdg_toplevel(parent_data->shell_surface.libdecor.frame);
-        } else
-#endif
-            if (parent_data->shell_surface_type == WAYLAND_SURFACE_XDG_TOPLEVEL && parent_data->shell_surface.xdg.roleobj.toplevel) {
-            parent_toplevel = parent_data->shell_surface.xdg.roleobj.toplevel;
-        }
+    return true;
+}
+
+bool Wayland_SetWindowModal(SDL_VideoDevice *_this, SDL_Window *window, bool modal)
+{
+    SDL_VideoData *viddata = _this->internal;
+    SDL_WindowData *data = window->internal;
+    SDL_WindowData *parent_data = window->parent->internal;
+
+    if (parent_data->surface_status != WAYLAND_SURFACE_STATUS_SHOWN) {
+        // Need to wait for the parent to become mapped before changing modal status.
+        data->reparenting_required = true;
+        return true;
+    } else {
+        data->reparenting_required = false;
     }
 
-    if (modal_toplevel) {
-        xdg_toplevel_set_parent(modal_toplevel, parent_toplevel);
+    struct xdg_toplevel *toplevel = GetToplevelForWindow(data);
 
+    if (toplevel) {
         if (viddata->xdg_wm_dialog_v1) {
-            if (parent_toplevel) {
-                if (!modal_data->xdg_dialog_v1) {
-                    modal_data->xdg_dialog_v1 = xdg_wm_dialog_v1_get_xdg_dialog(viddata->xdg_wm_dialog_v1, modal_toplevel);
+            if (modal) {
+                if (!data->xdg_dialog_v1) {
+                    data->xdg_dialog_v1 = xdg_wm_dialog_v1_get_xdg_dialog(viddata->xdg_wm_dialog_v1, toplevel);
                 }
 
-                xdg_dialog_v1_set_modal(modal_data->xdg_dialog_v1);
-            } else if (modal_data->xdg_dialog_v1) {
-                xdg_dialog_v1_unset_modal(modal_data->xdg_dialog_v1);
+                xdg_dialog_v1_set_modal(data->xdg_dialog_v1);
+            } else if (data->xdg_dialog_v1) {
+                xdg_dialog_v1_unset_modal(data->xdg_dialog_v1);
             }
         }
     }
@@ -1722,6 +1741,12 @@ void Wayland_ShowWindow(SDL_VideoDevice *_this, SDL_Window *window)
                 zxdg_exported_v2_add_listener(data->exported, &exported_v2_listener, data);
             }
 
+            if (c->xdg_toplevel_icon_manager_v1 && data->xdg_toplevel_icon_v1) {
+                xdg_toplevel_icon_manager_v1_set_icon(_this->internal->xdg_toplevel_icon_manager_v1,
+                                                      libdecor_frame_get_xdg_toplevel(data->shell_surface.libdecor.frame),
+                                                      data->xdg_toplevel_icon_v1);
+            }
+
             SDL_SetPointerProperty(props, SDL_PROP_WINDOW_WAYLAND_XDG_SURFACE_POINTER, libdecor_frame_get_xdg_surface(data->shell_surface.libdecor.frame));
             SDL_SetPointerProperty(props, SDL_PROP_WINDOW_WAYLAND_XDG_TOPLEVEL_POINTER, libdecor_frame_get_xdg_toplevel(data->shell_surface.libdecor.frame));
         }
@@ -1802,13 +1827,21 @@ void Wayland_ShowWindow(SDL_VideoDevice *_this, SDL_Window *window)
                 zxdg_exported_v2_add_listener(data->exported, &exported_v2_listener, data);
             }
 
+            if (c->xdg_toplevel_icon_manager_v1 && data->xdg_toplevel_icon_v1) {
+                xdg_toplevel_icon_manager_v1_set_icon(_this->internal->xdg_toplevel_icon_manager_v1,
+                                                      data->shell_surface.xdg.roleobj.toplevel,
+                                                      data->xdg_toplevel_icon_v1);
+            }
+
             SDL_SetPointerProperty(props, SDL_PROP_WINDOW_WAYLAND_XDG_TOPLEVEL_POINTER, data->shell_surface.xdg.roleobj.toplevel);
         }
     }
 
     // Restore state that was set prior to this call
+    Wayland_SetWindowParent(_this, window, window->parent);
+
     if (window->flags & SDL_WINDOW_MODAL) {
-        Wayland_SetWindowModalFor(_this, window, window->parent);
+        Wayland_SetWindowModal(_this, window, true);
     }
 
     Wayland_SetWindowTitle(_this, window);
@@ -1891,7 +1924,7 @@ void Wayland_ShowWindow(SDL_VideoDevice *_this, SDL_Window *window)
                                        data->surface);
 
             // Clear this variable, per the protocol's request
-            unsetenv("XDG_ACTIVATION_TOKEN");
+            SDL_unsetenv_unsafe("XDG_ACTIVATION_TOKEN");
         }
     }
 
@@ -2362,16 +2395,15 @@ bool Wayland_CreateWindow(SDL_VideoDevice *_this, SDL_Window *window, SDL_Proper
     data->waylandData = c;
     data->sdlwindow = window;
 
-    data->windowed_scale_factor = 1.0f;
+    data->scale_factor = 1.0;
 
     if (SDL_WINDOW_IS_POPUP(window)) {
         data->scale_to_display = window->parent->internal->scale_to_display;
-        data->windowed_scale_factor = window->parent->internal->windowed_scale_factor;
+        data->scale_factor = window->parent->internal->scale_factor;
         EnsurePopupPositionIsValid(window, &window->x, &window->y);
-    } else if ((window->flags & SDL_WINDOW_HIGH_PIXEL_DENSITY) || c->scale_to_display_enabled) {
+    } else {
         for (int i = 0; i < _this->num_displays; i++) {
-            float scale = _this->displays[i]->internal->scale_factor;
-            data->windowed_scale_factor = SDL_max(data->windowed_scale_factor, scale);
+            data->scale_factor = SDL_max(data->scale_factor, _this->displays[i]->internal->scale_factor);
         }
     }
 
@@ -2666,6 +2698,51 @@ void Wayland_SetWindowTitle(SDL_VideoDevice *_this, SDL_Window *window)
     }
 }
 
+bool Wayland_SetWindowIcon(SDL_VideoDevice *_this, SDL_Window *window, SDL_Surface *icon)
+{
+    SDL_WindowData *wind = window->internal;
+    struct xdg_toplevel *toplevel = NULL;
+
+    if (!_this->internal->xdg_toplevel_icon_manager_v1) {
+        return SDL_SetError("wayland: cannot set icon; xdg_toplevel_icon_v1 protocol not supported");
+    }
+
+    if (icon->w != icon->h) {
+        return SDL_SetError("wayland: icon width and height must be equal, got %ix%i", icon->w, icon->h);
+    }
+
+    if (wind->xdg_toplevel_icon_v1) {
+        xdg_toplevel_icon_v1_destroy(wind->xdg_toplevel_icon_v1);
+        wind->xdg_toplevel_icon_v1 = NULL;
+    }
+
+    // TODO: Add high-DPI icon support
+    Wayland_ReleaseSHMBuffer(&wind->icon);
+    if (Wayland_AllocSHMBuffer(icon->w, icon->h, &wind->icon) != 0) {
+        return SDL_SetError("wayland: failed to allocate SHM buffer for the icon");
+    }
+
+    SDL_PremultiplyAlpha(icon->w, icon->h, icon->format, icon->pixels, icon->pitch, SDL_PIXELFORMAT_ARGB8888, wind->icon.shm_data, icon->w * 4, true);
+
+    wind->xdg_toplevel_icon_v1 = xdg_toplevel_icon_manager_v1_create_icon(_this->internal->xdg_toplevel_icon_manager_v1);
+    xdg_toplevel_icon_v1_add_buffer(wind->xdg_toplevel_icon_v1, wind->icon.wl_buffer, 1);
+
+#ifdef HAVE_LIBDECOR_H
+    if (wind->shell_surface_type == WAYLAND_SURFACE_LIBDECOR && wind->shell_surface.libdecor.frame) {
+        toplevel = libdecor_frame_get_xdg_toplevel(wind->shell_surface.libdecor.frame);
+    } else
+#endif
+        if (wind->shell_surface_type == WAYLAND_SURFACE_XDG_TOPLEVEL && wind->shell_surface.xdg.roleobj.toplevel) {
+        toplevel = wind->shell_surface.xdg.roleobj.toplevel;
+    }
+
+    if (toplevel) {
+        xdg_toplevel_icon_manager_v1_set_icon(_this->internal->xdg_toplevel_icon_manager_v1, toplevel, wind->xdg_toplevel_icon_v1);
+    }
+
+    return true;
+}
+
 bool Wayland_SyncWindow(SDL_VideoDevice *_this, SDL_Window *window)
 {
     SDL_WindowData *wind = window->internal;
@@ -2744,13 +2821,14 @@ void Wayland_DestroyWindow(SDL_VideoDevice *_this, SDL_Window *window)
     SDL_VideoData *data = _this->internal;
     SDL_WindowData *wind = window->internal;
 
-    /* Roundtrip before destroying the window to make sure that it has received input leave events, so that
-     * no internal structures are left pointing to the destroyed window. */
-    if (wind->show_hide_sync_required) {
-        WAYLAND_wl_display_roundtrip(data->display);
-    }
-
     if (data && wind) {
+        /* Roundtrip before destroying the window to make sure that it has received input leave events, so that
+         * no internal structures are left pointing to the destroyed window.
+         */
+        if (wind->show_hide_sync_required) {
+            WAYLAND_wl_display_roundtrip(data->display);
+        }
+
 #ifdef SDL_VIDEO_OPENGL_EGL
         if (wind->egl_surface) {
             SDL_EGL_DestroySurface(_this, wind->egl_surface);
@@ -2802,6 +2880,12 @@ void Wayland_DestroyWindow(SDL_VideoDevice *_this, SDL_Window *window)
         } else {
             Wayland_RemoveWindowDataFromExternalList(wind);
         }
+
+        if (wind->xdg_toplevel_icon_v1) {
+            xdg_toplevel_icon_v1_destroy(wind->xdg_toplevel_icon_v1);
+        }
+
+        Wayland_ReleaseSHMBuffer(&wind->icon);
 
         SDL_free(wind);
         WAYLAND_wl_display_flush(data->display);

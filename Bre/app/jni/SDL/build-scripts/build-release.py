@@ -179,7 +179,7 @@ class Releaser:
                 continue
             mod_type, file_paths = line.split(maxsplit=1)
             assert current_time is not None
-            for file_path in file_paths.split():
+            for file_path in file_paths.split("\t"):
                 if file_path in set_paths and file_path not in path_times:
                     path_times[file_path] = current_time
         assert set(path_times.keys()) == set_paths
@@ -264,7 +264,7 @@ class Releaser:
             self.artifacts[f"src-tar-{comp}"] = tar_path
 
     def create_xcframework(self, configuration: str="Release") -> None:
-        dmg_in = self.root / f"Xcode/SDL/build/SDL3.dmg"
+        dmg_in = self.root / f"Xcode/SDL/build/{self.project}.dmg"
         dmg_in.unlink(missing_ok=True)
         self.executer.run(["xcodebuild", "-project", str(self.root / "Xcode/SDL/SDL.xcodeproj"), "-target", "SDL3.dmg", "-configuration", configuration])
         if self.dry:
@@ -362,6 +362,7 @@ class Releaser:
             ("WhatsNew.txt", ""),
             ("LICENSE.txt", ""),
             ("README.md", ""),
+            ("docs/*", "docs/"),
         )
         test_files = list(Path(r) / f for r, _, files in os.walk(self.root / "test") for f in files)
 
@@ -374,10 +375,12 @@ class Releaser:
             logger.info("Creating %s...", tar_paths[comp])
             with tarfile.open(tar_paths[comp], f"w:{comp}") as tar_object:
                 arc_root = f"{self.project}-{self.version}"
-                for file_path, arcdirname in extra_files:
+                for file_path_glob, arcdirname in extra_files:
                     assert not arcdirname or arcdirname[-1] == "/"
-                    arcname = f"{arc_root}/{arcdirname}{Path(file_path).name}"
-                    tar_object.add(self.root / file_path, arcname=arcname)
+                    for file_path in glob.glob(file_path_glob, root_dir=self.root):
+                        file_path = self.root / file_path
+                        arcname = f"{arc_root}/{arcdirname}{Path(file_path).name}"
+                        tar_object.add(file_path, arcname=arcname)
                 for arch in mingw_archs:
                     install_path = arch_install_paths[arch]
                     arcname_parent = f"{arc_root}/{arch}-w64-mingw32"
@@ -609,21 +612,28 @@ class Releaser:
         aar_path =  self.dist_path / f"{self.project}-{self.version}.aar"
         added_global_files = False
         with zipfile.ZipFile(aar_path, "w", compression=zipfile.ZIP_DEFLATED) as zip_object:
-            install_txt = (self.root / "build-scripts/pkg-support/android/INSTALL.md.in").read_text()
-            install_txt = install_txt.replace("@PROJECT_VERSION@", self.version)
-            install_txt = install_txt.replace("@PROJECT_NAME@", self.project)
+            def configure_file(path: Path) -> str:
+                text = path.read_text()
+                text = text.replace("@PROJECT_VERSION@", self.version)
+                text = text.replace("@PROJECT_NAME@", self.project)
+                return text
+
+            install_txt = configure_file(self.root / "build-scripts/pkg-support/android/INSTALL.md.in")
             zip_object.writestr("INSTALL.md", install_txt)
+
             project_description = {
                 "name": self.project,
                 "version": self.version,
                 "git-hash": self.commit,
             }
             zip_object.writestr("description.json", json.dumps(project_description, indent=0))
+            main_py = configure_file(self.root / "build-scripts/pkg-support/android/__main__.py.in")
+            zip_object.writestr("__main__.py", main_py)
+
             zip_object.writestr("AndroidManifest.xml", self.get_android_manifest_text())
             zip_object.write(self.root / "android-project/app/proguard-rules.pro", arcname="proguard.txt")
             zip_object.write(self.root / "LICENSE.txt", arcname="META-INF/LICENSE.txt")
             zip_object.write(self.root / "cmake/sdlcpu.cmake", arcname="cmake/sdlcpu.cmake")
-            zip_object.write(self.root / "build-scripts/pkg-support/android/__main__.py", arcname="__main__.py")
             zip_object.write(self.root / "build-scripts/pkg-support/android/cmake/SDL3Config.cmake", arcname="cmake/SDL3Config.cmake")
             zip_object.write(self.root / "build-scripts/pkg-support/android/cmake/SDL3ConfigVersion.cmake", arcname="cmake/SDL3ConfigVersion.cmake")
             zip_object.writestr("prefab/prefab.json", self.get_prefab_json_text())

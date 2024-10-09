@@ -43,11 +43,11 @@ static const char *cursorNames[] = {
     "window bottom left",
     "window left"
 };
-SDL_COMPILE_TIME_ASSERT(cursorNames, SDL_arraysize(cursorNames) == SDL_NUM_SYSTEM_CURSORS);
+SDL_COMPILE_TIME_ASSERT(cursorNames, SDL_arraysize(cursorNames) == SDL_SYSTEM_CURSOR_COUNT);
 
 static int system_cursor = -1;
 static SDL_Cursor *cursor = NULL;
-static const SDL_DisplayMode *highlighted_mode = NULL;
+static SDL_DisplayMode highlighted_mode;
 
 /* Draws the modes menu, and stores the mode index under the mouse in highlighted_mode */
 static void
@@ -95,7 +95,7 @@ draw_modes_menu(SDL_Window *window, SDL_Renderer *renderer, SDL_FRect viewport)
 
     /* Clear the cached mode under the mouse */
     if (window == SDL_GetMouseFocus()) {
-        highlighted_mode = NULL;
+        SDL_zero(highlighted_mode);
     }
 
     displays = SDL_GetDisplays(NULL);
@@ -126,7 +126,7 @@ draw_modes_menu(SDL_Window *window, SDL_Renderer *renderer, SDL_FRect viewport)
 
                     /* Update cached mode under the mouse */
                     if (window == SDL_GetMouseFocus()) {
-                        highlighted_mode = mode;
+                        SDL_copyp(&highlighted_mode, mode);
                     }
                 } else {
                     SDL_SetRenderDrawColor(renderer, 170, 170, 170, 255);
@@ -165,6 +165,7 @@ static void loop(void)
 
     while (SDL_PollEvent(&event)) {
         SDLTest_CommonEvent(state, &event, &done);
+        SDL_ConvertEventToRenderCoordinates(SDL_GetRenderer(SDL_GetWindowFromEvent(&event)), &event);
 
         if (event.type == SDL_EVENT_WINDOW_RESIZED) {
             SDL_Window *window = SDL_GetWindowFromEvent(&event);
@@ -186,22 +187,22 @@ static void loop(void)
             }
         }
         if (event.type == SDL_EVENT_KEY_UP) {
-            SDL_bool updateCursor = SDL_FALSE;
+            bool updateCursor = false;
 
             if (event.key.key == SDLK_A) {
                 SDL_assert(!"Keyboard generated assert");
             } else if (event.key.key == SDLK_LEFT) {
                 --system_cursor;
                 if (system_cursor < 0) {
-                    system_cursor = SDL_NUM_SYSTEM_CURSORS - 1;
+                    system_cursor = SDL_SYSTEM_CURSOR_COUNT - 1;
                 }
-                updateCursor = SDL_TRUE;
+                updateCursor = true;
             } else if (event.key.key == SDLK_RIGHT) {
                 ++system_cursor;
-                if (system_cursor >= SDL_NUM_SYSTEM_CURSORS) {
+                if (system_cursor >= SDL_SYSTEM_CURSOR_COUNT) {
                     system_cursor = 0;
                 }
-                updateCursor = SDL_TRUE;
+                updateCursor = true;
             }
             if (updateCursor) {
                 SDL_Log("Changing cursor to \"%s\"", cursorNames[system_cursor]);
@@ -212,9 +213,9 @@ static void loop(void)
         }
         if (event.type == SDL_EVENT_MOUSE_BUTTON_UP) {
             SDL_Window *window = SDL_GetMouseFocus();
-            if (highlighted_mode && window) {
-                SDL_memcpy(&state->fullscreen_mode, highlighted_mode, sizeof(state->fullscreen_mode));
-                SDL_SetWindowFullscreenMode(window, highlighted_mode);
+            if (highlighted_mode.w && window) {
+                SDL_copyp(&state->fullscreen_mode, &highlighted_mode);
+                SDL_SetWindowFullscreenMode(window, &highlighted_mode);
             }
         }
     }
@@ -264,9 +265,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    /* Enable standard application logging */
-    SDL_SetLogPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO);
-
+    /* Parse commandline */
     if (!SDLTest_CommonDefaultArgs(state, argc, argv) || !SDLTest_CommonInit(state)) {
         SDLTest_CommonQuit(state);
         return 1;

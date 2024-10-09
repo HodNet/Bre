@@ -229,7 +229,8 @@ static SDL_VideoDevice *WIN_CreateDevice(void)
     device->SetWindowResizable = WIN_SetWindowResizable;
     device->SetWindowAlwaysOnTop = WIN_SetWindowAlwaysOnTop;
     device->SetWindowFullscreen = WIN_SetWindowFullscreen;
-    device->SetWindowModalFor = WIN_SetWindowModalFor;
+    device->SetWindowParent = WIN_SetWindowParent;
+    device->SetWindowModal = WIN_SetWindowModal;
 #if !defined(SDL_PLATFORM_XBOXONE) && !defined(SDL_PLATFORM_XBOXSERIES)
     device->GetWindowICCProfile = WIN_GetWindowICCProfile;
     device->SetWindowMouseRect = WIN_SetWindowMouseRect;
@@ -536,10 +537,10 @@ void WIN_VideoQuit(SDL_VideoDevice *_this)
 {
     SDL_VideoData *data = _this->internal;
 
-    SDL_DelHintCallback(SDL_HINT_WINDOWS_RAW_KEYBOARD, UpdateWindowsRawKeyboard, _this);
-    SDL_DelHintCallback(SDL_HINT_WINDOWS_ENABLE_MESSAGELOOP, UpdateWindowsEnableMessageLoop, NULL);
-    SDL_DelHintCallback(SDL_HINT_WINDOWS_ENABLE_MENU_MNEMONICS, UpdateWindowsEnableMenuMnemonics, NULL);
-    SDL_DelHintCallback(SDL_HINT_WINDOW_FRAME_USABLE_WHILE_CURSOR_HIDDEN, UpdateWindowFrameUsableWhileCursorHidden, NULL);
+    SDL_RemoveHintCallback(SDL_HINT_WINDOWS_RAW_KEYBOARD, UpdateWindowsRawKeyboard, _this);
+    SDL_RemoveHintCallback(SDL_HINT_WINDOWS_ENABLE_MESSAGELOOP, UpdateWindowsEnableMessageLoop, NULL);
+    SDL_RemoveHintCallback(SDL_HINT_WINDOWS_ENABLE_MENU_MNEMONICS, UpdateWindowsEnableMenuMnemonics, NULL);
+    SDL_RemoveHintCallback(SDL_HINT_WINDOW_FRAME_USABLE_WHILE_CURSOR_HIDDEN, UpdateWindowFrameUsableWhileCursorHidden, NULL);
 
     WIN_SetRawMouseEnabled(_this, false);
     WIN_SetRawKeyboardEnabled(_this, false);
@@ -626,7 +627,7 @@ bool D3D_LoadDLL(void **pD3DDLL, IDirect3D9 **pDirect3D9Interface)
     return false;
 }
 
-int SDL_GetDirect3D9AdapterIndex(SDL_DisplayID display)
+int SDL_GetDirect3D9AdapterIndex(SDL_DisplayID displayID)
 {
     void *pD3DDLL;
     IDirect3D9 *pD3D;
@@ -634,7 +635,7 @@ int SDL_GetDirect3D9AdapterIndex(SDL_DisplayID display)
         SDL_SetError("Unable to create Direct3D interface");
         return -1;
     } else {
-        SDL_DisplayData *pData = SDL_GetDisplayDriverData(display);
+        SDL_DisplayData *pData = SDL_GetDisplayDriverData(displayID);
         int adapterIndex = D3DADAPTER_DEFAULT;
 
         if (!pData) {
@@ -665,7 +666,7 @@ int SDL_GetDirect3D9AdapterIndex(SDL_DisplayID display)
 }
 #endif // !defined(SDL_PLATFORM_XBOXONE) && !defined(SDL_PLATFORM_XBOXSERIES)
 
-SDL_bool SDL_GetDXGIOutputInfo(SDL_DisplayID display, int *adapterIndex, int *outputIndex)
+bool SDL_GetDXGIOutputInfo(SDL_DisplayID displayID, int *adapterIndex, int *outputIndex)
 {
 #ifndef HAVE_DXGI_H
     if (adapterIndex) {
@@ -678,7 +679,7 @@ SDL_bool SDL_GetDXGIOutputInfo(SDL_DisplayID display, int *adapterIndex, int *ou
 #else
     const SDL_VideoDevice *videodevice = SDL_GetVideoDevice();
     const SDL_VideoData *videodata = videodevice ? videodevice->internal : NULL;
-    SDL_DisplayData *pData = SDL_GetDisplayDriverData(display);
+    SDL_DisplayData *pData = SDL_GetDisplayDriverData(displayID);
     int nAdapter, nOutput;
     IDXGIAdapter *pDXGIAdapter;
     IDXGIOutput *pDXGIOutput;

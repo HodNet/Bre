@@ -695,7 +695,7 @@ typedef struct DRIVER_hid_device_ DRIVER_hid_device;
 
 static struct
 {
-    void *libhandle;
+    SDL_SharedObject *libhandle;
 
     /* *INDENT-OFF* */ // clang-format off
     int (LIBUSB_CALL *init)(libusb_context **ctx);
@@ -1287,8 +1287,8 @@ int SDL_hid_exit(void)
     }
 #endif // HAVE_LIBUSB
 
-    SDL_DelHintCallback(SDL_HINT_HIDAPI_ENUMERATE_ONLY_CONTROLLERS, OnlyControllersChanged, NULL);
-    SDL_DelHintCallback(SDL_HINT_HIDAPI_IGNORE_DEVICES, IgnoredDevicesChanged, NULL);
+    SDL_RemoveHintCallback(SDL_HINT_HIDAPI_ENUMERATE_ONLY_CONTROLLERS, OnlyControllersChanged, NULL);
+    SDL_RemoveHintCallback(SDL_HINT_HIDAPI_IGNORE_DEVICES, IgnoredDevicesChanged, NULL);
 
     if (SDL_hidapi_ignored_devices) {
         SDL_free(SDL_hidapi_ignored_devices);
@@ -1685,7 +1685,7 @@ int SDL_hid_get_report_descriptor(SDL_hid_device *device, unsigned char *buf, si
     return device->backend->hid_get_report_descriptor(device->device, buf, buf_size);
 }
 
-void SDL_hid_ble_scan(SDL_bool active)
+void SDL_hid_ble_scan(bool active)
 {
 #if !defined(SDL_HIDAPI_DISABLED) && (defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_TVOS))
     extern void hid_ble_scan(int bStart);

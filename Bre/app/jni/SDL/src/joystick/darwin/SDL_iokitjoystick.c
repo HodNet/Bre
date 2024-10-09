@@ -475,6 +475,11 @@ static bool GetDeviceInfo(IOHIDDeviceRef hidDevice, recDevice *pDevice)
         CFNumberGetValue(refCF, kCFNumberSInt32Type, &version);
     }
 
+    if (SDL_IsJoystickXboxOne(vendor, product)) {
+        // We can't actually use this API for Xbox controllers
+        return false;
+    }
+
     // get device name
     refCF = IOHIDDeviceGetProperty(hidDevice, CFSTR(kIOHIDManufacturerKey));
     if ((!refCF) || (!CFStringGetCString(refCF, manufacturer_string, sizeof(manufacturer_string), kCFStringEncodingUTF8))) {
@@ -967,10 +972,7 @@ static void DARWIN_JoystickUpdate(SDL_Joystick *joystick)
     while (element) {
         goodRead = GetHIDElementState(device, element, &value);
         if (goodRead) {
-            if (value > 1) { // handle pressure-sensitive buttons
-                value = 1;
-            }
-            SDL_SendJoystickButton(timestamp, joystick, i, value);
+            SDL_SendJoystickButton(timestamp, joystick, i, (value != 0));
         }
 
         element = element->pNext;

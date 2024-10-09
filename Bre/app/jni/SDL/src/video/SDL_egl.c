@@ -22,7 +22,7 @@
 
 #ifdef SDL_VIDEO_OPENGL_EGL
 
-#if defined(SDL_VIDEO_DRIVER_WINDOWS) || defined(SDL_VIDEO_DRIVER_WINRT)
+#if defined(SDL_VIDEO_DRIVER_WINDOWS)
 #include "../core/windows/SDL_windows.h"
 #endif
 #ifdef SDL_VIDEO_DRIVER_ANDROID
@@ -74,7 +74,7 @@
 #define DEFAULT_OGL_ES_PVR "libGLES_CM.so"
 #define DEFAULT_OGL_ES     "libGLESv1_CM.so"
 
-#elif defined(SDL_VIDEO_DRIVER_WINDOWS) || defined(SDL_VIDEO_DRIVER_WINRT)
+#elif defined(SDL_VIDEO_DRIVER_WINDOWS)
 // EGL AND OpenGL ES support via ANGLE
 #define DEFAULT_EGL        "libEGL.dll"
 #define DEFAULT_OGL        "opengl32.dll"
@@ -299,16 +299,17 @@ void SDL_EGL_UnloadLibrary(SDL_VideoDevice *_this)
 
 static bool SDL_EGL_LoadLibraryInternal(SDL_VideoDevice *_this, const char *egl_path)
 {
-    void *egl_dll_handle = NULL, *opengl_dll_handle = NULL;
+    SDL_SharedObject *egl_dll_handle = NULL;
+    SDL_SharedObject *opengl_dll_handle = NULL;
     const char *path = NULL;
-#if defined(SDL_VIDEO_DRIVER_WINDOWS) || defined(SDL_VIDEO_DRIVER_WINRT)
+#if defined(SDL_VIDEO_DRIVER_WINDOWS)
     const char *d3dcompiler;
 #endif
 #ifdef SDL_VIDEO_DRIVER_RPI
     bool vc4 = (0 == access("/sys/module/vc4/", F_OK));
 #endif
 
-#if defined(SDL_VIDEO_DRIVER_WINDOWS) || defined(SDL_VIDEO_DRIVER_WINRT)
+#if defined(SDL_VIDEO_DRIVER_WINDOWS)
     d3dcompiler = SDL_GetHint(SDL_HINT_VIDEO_WIN_D3DCOMPILER);
     if (d3dcompiler) {
         if (SDL_strcasecmp(d3dcompiler, "none") != 0) {
@@ -505,14 +506,12 @@ static void SDL_EGL_GetVersion(SDL_VideoDevice *_this)
 
 bool SDL_EGL_LoadLibrary(SDL_VideoDevice *_this, const char *egl_path, NativeDisplayType native_display, EGLenum platform)
 {
-    int library_load_retcode = SDL_EGL_LoadLibraryOnly(_this, egl_path);
-    if (library_load_retcode != 0) {
-        return library_load_retcode;
+    if (!SDL_EGL_LoadLibraryOnly(_this, egl_path)) {
+        return false;
     }
 
     _this->egl_data->egl_display = EGL_NO_DISPLAY;
 
-#ifndef SDL_PLATFORM_WINRT
 #ifndef SDL_VIDEO_DRIVER_VITA
     if (platform) {
         /* EGL 1.5 allows querying for client version with EGL_NO_DISPLAY
@@ -530,7 +529,7 @@ bool SDL_EGL_LoadLibrary(SDL_VideoDevice *_this, const char *egl_path, NativeDis
         if (_this->egl_data->eglGetPlatformDisplay) {
             EGLAttrib *attribs = NULL;
             if (_this->egl_platformattrib_callback) {
-                attribs = _this->egl_platformattrib_callback();
+                attribs = _this->egl_platformattrib_callback(_this->egl_attrib_callback_userdata);
                 if (!attribs) {
                     _this->gl_config.driver_loaded = 0;
                     *_this->gl_config.driver_path = '\0';
@@ -538,6 +537,7 @@ bool SDL_EGL_LoadLibrary(SDL_VideoDevice *_this, const char *egl_path, NativeDis
                 }
             }
             _this->egl_data->egl_display = _this->egl_data->eglGetPlatformDisplay(platform, (void *)(uintptr_t)native_display, attribs);
+            SDL_free(attribs);
         } else {
             if (SDL_EGL_HasExtension(_this, SDL_EGL_CLIENT_EXTENSION, "EGL_EXT_platform_base")) {
                 _this->egl_data->eglGetPlatformDisplayEXT = (PFNEGLGETPLATFORMDISPLAYEXTPROC)SDL_EGL_GetProcAddressInternal(_this, "eglGetPlatformDisplayEXT");
@@ -565,7 +565,6 @@ bool SDL_EGL_LoadLibrary(SDL_VideoDevice *_this, const char *egl_path, NativeDis
         *_this->gl_config.driver_path = '\0';
         return SDL_SetError("Could not initialize EGL");
     }
-#endif
 
     // Get the EGL version with a valid egl_display, for EGL <= 1.4
     SDL_EGL_GetVersion(_this);
@@ -927,21 +926,17 @@ static bool SDL_EGL_PrivateChooseConfig(SDL_VideoDevice *_this, bool set_config_
 
 bool SDL_EGL_ChooseConfig(SDL_VideoDevice *_this)
 {
-    int ret;
-
     if (!_this->egl_data) {
         return SDL_SetError("EGL not initialized");
     }
 
     // Try with EGL_CONFIG_CAVEAT set to EGL_NONE, to avoid any EGL_SLOW_CONFIG or EGL_NON_CONFORMANT_CONFIG
-    ret = SDL_EGL_PrivateChooseConfig(_this, true);
-    if (ret == 0) {
+    if (SDL_EGL_PrivateChooseConfig(_this, true)) {
         return true;
     }
 
     // Fallback with all configs
-    ret = SDL_EGL_PrivateChooseConfig(_this, false);
-    if (ret == 0) {
+    if (SDL_EGL_PrivateChooseConfig(_this, false)) {
         SDL_Log("SDL_EGL_ChooseConfig: found a slow EGL config");
         return true;
     }
@@ -1044,7 +1039,7 @@ SDL_GLContext SDL_EGL_CreateContext(SDL_VideoDevice *_this, EGLSurface egl_surfa
     if (_this->egl_contextattrib_callback) {
         const int maxAttribs = sizeof(attribs) / sizeof(attribs[0]);
         EGLint *userAttribs, *userAttribP;
-        userAttribs = _this->egl_contextattrib_callback();
+        userAttribs = _this->egl_contextattrib_callback(_this->egl_attrib_callback_userdata, _this->egl_data->egl_display, _this->egl_data->egl_config);
         if (!userAttribs) {
             _this->gl_config.driver_loaded = 0;
             *_this->gl_config.driver_path = '\0';
@@ -1062,6 +1057,7 @@ SDL_GLContext SDL_EGL_CreateContext(SDL_VideoDevice *_this, EGLSurface egl_surfa
             attribs[attr++] = *userAttribP++;
             attribs[attr++] = *userAttribP++;
         }
+        SDL_free(userAttribs);
     }
 
     attribs[attr++] = EGL_NONE;
@@ -1270,7 +1266,7 @@ EGLSurface SDL_EGL_CreateSurface(SDL_VideoDevice *_this, SDL_Window *window, Nat
     if (_this->egl_surfaceattrib_callback) {
         const int maxAttribs = sizeof(attribs) / sizeof(attribs[0]);
         EGLint *userAttribs, *userAttribP;
-        userAttribs = _this->egl_surfaceattrib_callback();
+        userAttribs = _this->egl_surfaceattrib_callback(_this->egl_attrib_callback_userdata, _this->egl_data->egl_display, _this->egl_data->egl_config);
         if (!userAttribs) {
             _this->gl_config.driver_loaded = 0;
             *_this->gl_config.driver_path = '\0';
@@ -1288,6 +1284,7 @@ EGLSurface SDL_EGL_CreateSurface(SDL_VideoDevice *_this, SDL_Window *window, Nat
             attribs[attr++] = *userAttribP++;
             attribs[attr++] = *userAttribP++;
         }
+        SDL_free(userAttribs);
     }
 
     attribs[attr++] = EGL_NONE;

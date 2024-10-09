@@ -166,6 +166,9 @@
 #define SDL_JOYSTICK_EMSCRIPTEN 1
 #define SDL_JOYSTICK_VIRTUAL    1
 
+/* Enable various process implementations */
+#define SDL_PROCESS_DUMMY 1
+
 /* Enable various sensor drivers */
 #define SDL_SENSOR_DUMMY 1
 
@@ -207,5 +210,8 @@
 
 /* Enable the camera driver */
 #define SDL_CAMERA_DRIVER_EMSCRIPTEN  1
+
+/* Enable dialog subsystem */
+#define SDL_DIALOG_DUMMY 1
 
 #endif /* SDL_build_config_emscripten_h */

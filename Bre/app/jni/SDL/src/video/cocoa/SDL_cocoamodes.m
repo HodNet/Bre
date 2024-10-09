@@ -83,14 +83,14 @@ static bool CG_SetError(const char *prefix, CGDisplayErr result)
     return SDL_SetError("%s: %s", prefix, error);
 }
 
-static NSScreen *GetNSScreenForDisplayID(CGDirectDisplayID display)
+static NSScreen *GetNSScreenForDisplayID(CGDirectDisplayID displayID)
 {
     NSArray *screens = [NSScreen screens];
 
     // !!! FIXME: maybe track the NSScreen in SDL_DisplayData?
     for (NSScreen *screen in screens) {
         const CGDirectDisplayID thisDisplay = (CGDirectDisplayID)[[[screen deviceDescription] objectForKey:@"NSScreenNumber"] unsignedIntValue];
-        if (thisDisplay == display) {
+        if (thisDisplay == displayID) {
             return screen;
         }
     }
@@ -275,10 +275,10 @@ static bool GetDisplayMode(SDL_VideoDevice *_this, CGDisplayModeRef vidmode, boo
     return true;
 }
 
-static char *Cocoa_GetDisplayName(CGDirectDisplayID display)
+static char *Cocoa_GetDisplayName(CGDirectDisplayID displayID)
 {
     // This API is deprecated in 10.9 with no good replacement (as of 10.15).
-    io_service_t servicePort = CGDisplayIOServicePort(display);
+    io_service_t servicePort = CGDisplayIOServicePort(displayID);
     CFDictionaryRef deviceInfo = IODisplayCreateInfoDictionary(servicePort, kIODisplayOnlyPreferredName);
     NSDictionary *localizedNames = [(__bridge NSDictionary *)deviceInfo objectForKey:[NSString stringWithUTF8String:kDisplayProductName]];
     char *displayName = NULL;
@@ -290,14 +290,14 @@ static char *Cocoa_GetDisplayName(CGDirectDisplayID display)
     return displayName;
 }
 
-static void Cocoa_GetHDRProperties(CGDirectDisplayID display, SDL_HDROutputProperties *HDR)
+static void Cocoa_GetHDRProperties(CGDirectDisplayID displayID, SDL_HDROutputProperties *HDR)
 {
     HDR->SDR_white_level = 1.0f;
     HDR->HDR_headroom = 1.0f;
 
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= 101500 // Added in the 10.15 SDK
     if (@available(macOS 10.15, *)) {
-        NSScreen *screen = GetNSScreenForDisplayID(display);
+        NSScreen *screen = GetNSScreenForDisplayID(displayID);
         if (screen) {
             if (screen.maximumExtendedDynamicRangeColorComponentValue > 1.0f) {
                 HDR->HDR_headroom = screen.maximumExtendedDynamicRangeColorComponentValue;

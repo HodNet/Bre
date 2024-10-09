@@ -81,6 +81,7 @@ struct SDL_VideoData
     struct zxdg_exporter_v2 *zxdg_exporter_v2;
     struct xdg_wm_dialog_v1 *xdg_wm_dialog_v1;
     struct wp_alpha_modifier_v1 *wp_alpha_modifier_v1;
+    struct xdg_toplevel_icon_manager_v1 *xdg_toplevel_icon_manager_v1;
     struct kde_output_order_v1 *kde_output_order;
     struct frog_color_management_factory_v1 *frog_color_management_factory_v1;
     struct zwp_tablet_manager_v2 *tablet_manager;
@@ -104,8 +105,8 @@ struct SDL_DisplayData
     struct wl_output *output;
     struct zxdg_output_v1 *xdg_output;
     char *wl_output_name;
+    double scale_factor;
     uint32_t registry_id;
-    float scale_factor;
     int pixel_width, pixel_height;
     int x, y, screen_width, screen_height, refresh, transform;
     SDL_DisplayOrientation orientation;

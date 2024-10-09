@@ -20,7 +20,7 @@
 */
 #include "SDL_internal.h"
 
-#if SDL_VIDEO_RENDER_D3D
+#ifdef SDL_VIDEO_RENDER_D3D
 
 #include "../../core/windows/SDL_windows.h"
 
@@ -29,10 +29,8 @@
 #include "../../video/windows/SDL_windowsvideo.h"
 #include "../../video/SDL_pixels_c.h"
 
-#if SDL_VIDEO_RENDER_D3D
 #define D3D_DEBUG_INFO
 #include <d3d9.h>
-#endif
 
 #include "SDL_shaders_d3d.h"
 
@@ -1621,7 +1619,7 @@ static bool D3D_CreateRenderer(SDL_Renderer *renderer, SDL_Window *window, SDL_P
     D3DCAPS9 caps;
     DWORD device_flags;
     int w, h;
-    SDL_DisplayID display;
+    SDL_DisplayID displayID;
     const SDL_DisplayMode *fullscreen_mode = NULL;
 
     hwnd = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
@@ -1698,8 +1696,8 @@ static bool D3D_CreateRenderer(SDL_Renderer *renderer, SDL_Window *window, SDL_P
     pparams.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
 
     // Get the adapter for the display that the window is on
-    display = SDL_GetDisplayForWindow(window);
-    data->adapter = SDL_GetDirect3D9AdapterIndex(display);
+    displayID = SDL_GetDisplayForWindow(window);
+    data->adapter = SDL_GetDirect3D9AdapterIndex(displayID);
 
     result = IDirect3D9_GetDeviceCaps(data->d3d, data->adapter, D3DDEVTYPE_HAL, &caps);
     if (FAILED(result)) {
@@ -1776,4 +1774,4 @@ static bool D3D_CreateRenderer(SDL_Renderer *renderer, SDL_Window *window, SDL_P
 SDL_RenderDriver D3D_RenderDriver = {
     D3D_CreateRenderer, "direct3d"
 };
-#endif // SDL_VIDEO_RENDER_D3D && !SDL_RENDER_DISABLED
+#endif // SDL_VIDEO_RENDER_D3D

@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     int hello = 0;
     const char *libname = NULL;
     const char *symname = NULL;
-    void *lib = NULL;
+    SDL_SharedObject *lib = NULL;
     fntype fn = NULL;
     SDLTest_CommonState *state;
 
@@ -44,9 +44,6 @@ int main(int argc, char *argv[])
     if (!state) {
         return 1;
     }
-
-    /* Enable standard application logging */
-    SDL_SetLogPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO);
 
     /* Parse commandline */
     for (i = 1; i < argc;) {

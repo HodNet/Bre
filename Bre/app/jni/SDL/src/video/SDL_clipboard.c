@@ -22,13 +22,25 @@
 
 #include "SDL_clipboard_c.h"
 #include "SDL_sysvideo.h"
+#include "../events/SDL_events_c.h"
 #include "../events/SDL_clipboardevents_c.h"
+
+void SDL_FreeClipboardMimeTypes(SDL_VideoDevice *_this)
+{
+    if (_this->clipboard_mime_types) {
+        for (size_t i = 0; i < _this->num_clipboard_mime_types; ++i) {
+            SDL_free(_this->clipboard_mime_types[i]);
+        }
+        SDL_free(_this->clipboard_mime_types);
+        _this->clipboard_mime_types = NULL;
+        _this->num_clipboard_mime_types = 0;
+    }
+}
 
 
 void SDL_CancelClipboardData(Uint32 sequence)
 {
     SDL_VideoDevice *_this = SDL_GetVideoDevice();
-    size_t i;
 
     if (sequence != _this->clipboard_sequence) {
         // This clipboard data was already canceled
@@ -39,21 +51,14 @@ void SDL_CancelClipboardData(Uint32 sequence)
         _this->clipboard_cleanup(_this->clipboard_userdata);
     }
 
-    if (_this->clipboard_mime_types) {
-        for (i = 0; i < _this->num_clipboard_mime_types; ++i) {
-            SDL_free(_this->clipboard_mime_types[i]);
-        }
-        SDL_free(_this->clipboard_mime_types);
-        _this->clipboard_mime_types = NULL;
-        _this->num_clipboard_mime_types = 0;
-    }
+    SDL_FreeClipboardMimeTypes(_this);
 
     _this->clipboard_callback = NULL;
     _this->clipboard_cleanup = NULL;
     _this->clipboard_userdata = NULL;
 }
 
-SDL_bool SDL_SetClipboardData(SDL_ClipboardDataCallback callback, SDL_ClipboardCleanupCallback cleanup, void *userdata, const char **mime_types, size_t num_mime_types)
+bool SDL_SetClipboardData(SDL_ClipboardDataCallback callback, SDL_ClipboardCleanupCallback cleanup, void *userdata, const char **mime_types, size_t num_mime_types)
 {
     SDL_VideoDevice *_this = SDL_GetVideoDevice();
     size_t i;
@@ -135,11 +140,15 @@ SDL_bool SDL_SetClipboardData(SDL_ClipboardDataCallback callback, SDL_ClipboardC
         }
     }
 
-    SDL_SendClipboardUpdate();
+    char **mime_types_copy = SDL_CopyClipboardMimeTypes(mime_types, num_mime_types, true);
+    if (!mime_types_copy)
+        return SDL_SetError("unable to copy current mime types");
+
+    SDL_SendClipboardUpdate(true, mime_types_copy, num_mime_types);
     return true;
 }
 
-SDL_bool SDL_ClearClipboardData(void)
+bool SDL_ClearClipboardData(void)
 {
     return SDL_SetClipboardData(NULL, NULL, NULL, NULL, 0);
 }
@@ -209,7 +218,7 @@ bool SDL_HasInternalClipboardData(SDL_VideoDevice *_this, const char *mime_type)
     return false;
 }
 
-SDL_bool SDL_HasClipboardData(const char *mime_type)
+bool SDL_HasClipboardData(const char *mime_type)
 {
     SDL_VideoDevice *_this = SDL_GetVideoDevice();
 
@@ -230,6 +239,54 @@ SDL_bool SDL_HasClipboardData(const char *mime_type)
     } else {
         return SDL_HasInternalClipboardData(_this, mime_type);
     }
+}
+
+char **SDL_CopyClipboardMimeTypes(const char **clipboard_mime_types, size_t num_mime_types, bool temporary)
+{
+    size_t allocSize = sizeof(char *);
+    for (size_t i = 0; i < num_mime_types; i++) {
+        allocSize += sizeof(char *) + SDL_strlen(clipboard_mime_types[i]) + 1;
+    }
+
+    char *ret;
+    if (temporary)
+        ret = (char *)SDL_AllocateTemporaryMemory(allocSize);
+    else
+        ret = (char *)SDL_malloc(allocSize);
+    if (!ret) {
+        return NULL;
+    }
+
+    char **result = (char **)ret;
+    ret += sizeof(char *) * (num_mime_types + 1);
+
+    for (size_t i = 0; i < num_mime_types; i++) {
+        result[i] = ret;
+
+        const char *mime_type = clipboard_mime_types[i];
+        // Copy the whole string including the terminating null char
+        char c;
+        do {
+            c = *ret++ = *mime_type++;
+        } while (c != '\0');
+    }
+    result[num_mime_types] = NULL;
+
+    return result;
+
+}
+
+char **SDL_GetClipboardMimeTypes(size_t *num_mime_types)
+{
+    SDL_VideoDevice *_this = SDL_GetVideoDevice();
+
+    if (!_this) {
+        SDL_SetError("Video subsystem must be initialized to query clipboard mime types");
+        return NULL;
+    }
+
+    *num_mime_types = _this->num_clipboard_mime_types;
+    return SDL_CopyClipboardMimeTypes((const char **)_this->clipboard_mime_types, _this->num_clipboard_mime_types, false);
 }
 
 // Clipboard text
@@ -264,7 +321,7 @@ const void * SDLCALL SDL_ClipboardTextCallback(void *userdata, const char *mime_
     return text;
 }
 
-SDL_bool SDL_SetClipboardText(const char *text)
+bool SDL_SetClipboardText(const char *text)
 {
     SDL_VideoDevice *_this = SDL_GetVideoDevice();
     size_t num_mime_types;
@@ -310,7 +367,7 @@ char *SDL_GetClipboardText(void)
     return text;
 }
 
-SDL_bool SDL_HasClipboardText(void)
+bool SDL_HasClipboardText(void)
 {
     SDL_VideoDevice *_this = SDL_GetVideoDevice();
     size_t i, num_mime_types;
@@ -332,7 +389,7 @@ SDL_bool SDL_HasClipboardText(void)
 
 // Primary selection text
 
-SDL_bool SDL_SetPrimarySelectionText(const char *text)
+bool SDL_SetPrimarySelectionText(const char *text)
 {
     SDL_VideoDevice *_this = SDL_GetVideoDevice();
 
@@ -352,7 +409,11 @@ SDL_bool SDL_SetPrimarySelectionText(const char *text)
         _this->primary_selection_text = SDL_strdup(text);
     }
 
-    SDL_SendClipboardUpdate();
+    char **mime_types = SDL_CopyClipboardMimeTypes((const char **)_this->clipboard_mime_types, _this->num_clipboard_mime_types, true);
+    if (!mime_types)
+        return SDL_SetError("unable to copy current mime types");
+
+    SDL_SendClipboardUpdate(true, mime_types, _this->num_clipboard_mime_types);
     return true;
 }
 
@@ -376,7 +437,7 @@ char *SDL_GetPrimarySelectionText(void)
     }
 }
 
-SDL_bool SDL_HasPrimarySelectionText(void)
+bool SDL_HasPrimarySelectionText(void)
 {
     SDL_VideoDevice *_this = SDL_GetVideoDevice();
 

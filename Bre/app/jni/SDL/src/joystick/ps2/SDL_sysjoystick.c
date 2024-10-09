@@ -29,7 +29,6 @@
 
 #include <stdio.h> // For the definition of NULL
 #include <stdlib.h>
-#include <stdbool.h>
 
 #include "../SDL_sysjoystick.h"
 #include "../SDL_joystick_c.h"
@@ -295,7 +294,7 @@ static void PS2_JoystickUpdate(SDL_Joystick *joystick)
                     previous = info->btns & mask;
                     current = pressed_buttons & mask;
                     if (previous != current) {
-                        SDL_SendJoystickButton(timestamp, joystick, i, current ? SDL_PRESSED : SDL_RELEASED);
+                        SDL_SendJoystickButton(timestamp, joystick, i, (current != 0));
                     }
                 }
             }

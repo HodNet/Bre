@@ -25,9 +25,15 @@
 #include "../SDL_sysjoystick.h"
 #include "../usb_ids.h"
 
-#include <stdbool.h>
 #define COBJMACROS
 #include <gameinput.h>
+
+// Default value for SDL_HINT_JOYSTICK_GAMEINPUT
+#if defined(SDL_PLATFORM_GDK)
+#define SDL_GAMEINPUT_DEFAULT true
+#else
+#define SDL_GAMEINPUT_DEFAULT false
+#endif
 
 enum
 {
@@ -61,7 +67,7 @@ typedef struct joystick_hwdata
 } GAMEINPUT_InternalJoystickHwdata;
 
 static GAMEINPUT_InternalList g_GameInputList = { NULL };
-static void *g_hGameInputDLL = NULL;
+static SDL_SharedObject *g_hGameInputDLL = NULL;
 static IGameInput *g_pGameInput = NULL;
 static GameInputCallbackToken g_GameInputCallbackToken = GAMEINPUT_INVALID_CALLBACK_TOKEN_VALUE;
 static Uint64 g_GameInputTimestampOffset;
@@ -235,7 +241,7 @@ static bool GAMEINPUT_JoystickInit(void)
 {
     HRESULT hR;
 
-    if (!SDL_GetHintBoolean(SDL_HINT_JOYSTICK_GAMEINPUT, false)) {
+    if (!SDL_GetHintBoolean(SDL_HINT_JOYSTICK_GAMEINPUT, SDL_GAMEINPUT_DEFAULT)) {
         return true;
     }
 
@@ -419,10 +425,12 @@ static void CALLBACK GAMEINPUT_InternalSystemButtonCallback(
 
         SDL_LockJoysticks();
         if (changedButtons & GameInputSystemButtonGuide) {
-            SDL_SendJoystickButton(timestamp, joystick, SDL_GAMEPAD_BUTTON_GUIDE, (currentButtons & GameInputSystemButtonGuide) ? SDL_PRESSED : SDL_RELEASED);
+            bool down = ((currentButtons & GameInputSystemButtonGuide) != 0);
+            SDL_SendJoystickButton(timestamp, joystick, SDL_GAMEPAD_BUTTON_GUIDE, down);
         }
         if (changedButtons & GameInputSystemButtonShare) {
-            SDL_SendJoystickButton(timestamp, joystick, SDL_GAMEPAD_BUTTON_GAMEINPUT_SHARE, (currentButtons & GameInputSystemButtonShare) ? SDL_PRESSED : SDL_RELEASED);
+            bool down = ((currentButtons & GameInputSystemButtonShare) != 0);
+            SDL_SendJoystickButton(timestamp, joystick, SDL_GAMEPAD_BUTTON_GAMEINPUT_SHARE, down);
         }
         SDL_UnlockJoysticks();
     }
@@ -567,7 +575,7 @@ static void GAMEINPUT_JoystickUpdate(SDL_Joystick *joystick)
             GameInputGamepadLeftShoulder,    // SDL_GAMEPAD_BUTTON_LEFT_SHOULDER
             GameInputGamepadRightShoulder,   // SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER
         };
-        Uint8 btnidx = 0, btnstate = 0, hat = 0;
+        Uint8 btnidx = 0, hat = 0;
 
         if (IGameInputReading_GetGamepadState(reading, &state)) {
             for (btnidx = 0; btnidx < SDL_arraysize(s_XInputButtons); ++btnidx) {
@@ -575,8 +583,8 @@ static void GAMEINPUT_JoystickUpdate(SDL_Joystick *joystick)
                 if (!button_mask) {
                     continue;
                 }
-                btnstate = (state.buttons & button_mask) ? SDL_PRESSED : SDL_RELEASED;
-                SDL_SendJoystickButton(timestamp, joystick, btnidx, btnstate);
+                bool down = ((state.buttons & button_mask) != 0);
+                SDL_SendJoystickButton(timestamp, joystick, btnidx, down);
             }
 
             if (state.buttons & GameInputGamepadDPadUp) {
@@ -637,7 +645,7 @@ static void GAMEINPUT_JoystickUpdate(SDL_Joystick *joystick)
             for (i = 0; i < touch_count; ++i) {
                 GameInputTouchState *touch = &touch_state[i];
                 // FIXME: We should use touch->touchId to track fingers instead of using i below
-                SDL_SendJoystickTouchpad(timestamp, joystick, 0, i, SDL_PRESSED, touch->positionX * info->touchSensorInfo[i].resolutionX, touch->positionY * info->touchSensorInfo[0].resolutionY, touch->pressure);
+                SDL_SendJoystickTouchpad(timestamp, joystick, 0, i, true, touch->positionX * info->touchSensorInfo[i].resolutionX, touch->positionY * info->touchSensorInfo[0].resolutionY, touch->pressure);
             }
             SDL_stack_free(touch_state);
         }

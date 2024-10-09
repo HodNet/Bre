@@ -268,7 +268,7 @@ static bool keyboard_repeat_handle(SDL_WaylandKeyboardRepeat *repeat_info, Uint6
     while (elapsed >= repeat_info->next_repeat_ns) {
         if (repeat_info->scancode != SDL_SCANCODE_UNKNOWN) {
             const Uint64 timestamp = repeat_info->wl_press_time_ns + repeat_info->next_repeat_ns;
-            SDL_SendKeyboardKeyIgnoreModifiers(Wayland_GetEventTimestamp(timestamp), repeat_info->keyboard_id, repeat_info->key, repeat_info->scancode, SDL_PRESSED);
+            SDL_SendKeyboardKeyIgnoreModifiers(Wayland_GetEventTimestamp(timestamp), repeat_info->keyboard_id, repeat_info->key, repeat_info->scancode, true);
         }
         if (repeat_info->text[0]) {
             SDL_SendKeyboardText(repeat_info->text);
@@ -521,8 +521,8 @@ static void pointer_handle_motion(void *data, struct wl_pointer *pointer,
     input->sx_w = sx_w;
     input->sy_w = sy_w;
     if (input->pointer_focus) {
-        float sx = (float)(wl_fixed_to_double(sx_w) * window_data->pointer_scale.x);
-        float sy = (float)(wl_fixed_to_double(sy_w) * window_data->pointer_scale.y);
+        const float sx = (float)(wl_fixed_to_double(sx_w) * window_data->pointer_scale.x);
+        const float sy = (float)(wl_fixed_to_double(sy_w) * window_data->pointer_scale.y);
         SDL_SendMouseMotion(Wayland_GetPointerTimestamp(input, time), window_data->sdlwindow, input->pointer_id, false, sx, sy);
     }
 
@@ -593,11 +593,11 @@ static void pointer_handle_leave(void *data, struct wl_pointer *pointer,
             // Clear the capture flag and raise all buttons
             wind->sdlwindow->flags &= ~SDL_WINDOW_MOUSE_CAPTURE;
 
-            SDL_SendMouseButton(Wayland_GetPointerTimestamp(input, 0), wind->sdlwindow, input->pointer_id, SDL_RELEASED, SDL_BUTTON_LEFT);
-            SDL_SendMouseButton(Wayland_GetPointerTimestamp(input, 0), wind->sdlwindow, input->pointer_id, SDL_RELEASED, SDL_BUTTON_RIGHT);
-            SDL_SendMouseButton(Wayland_GetPointerTimestamp(input, 0), wind->sdlwindow, input->pointer_id, SDL_RELEASED, SDL_BUTTON_MIDDLE);
-            SDL_SendMouseButton(Wayland_GetPointerTimestamp(input, 0), wind->sdlwindow, input->pointer_id, SDL_RELEASED, SDL_BUTTON_X1);
-            SDL_SendMouseButton(Wayland_GetPointerTimestamp(input, 0), wind->sdlwindow, input->pointer_id, SDL_RELEASED, SDL_BUTTON_X2);
+            SDL_SendMouseButton(Wayland_GetPointerTimestamp(input, 0), wind->sdlwindow, input->pointer_id, SDL_BUTTON_LEFT, false);
+            SDL_SendMouseButton(Wayland_GetPointerTimestamp(input, 0), wind->sdlwindow, input->pointer_id, SDL_BUTTON_RIGHT, false);
+            SDL_SendMouseButton(Wayland_GetPointerTimestamp(input, 0), wind->sdlwindow, input->pointer_id, SDL_BUTTON_MIDDLE, false);
+            SDL_SendMouseButton(Wayland_GetPointerTimestamp(input, 0), wind->sdlwindow, input->pointer_id, SDL_BUTTON_X1, false);
+            SDL_SendMouseButton(Wayland_GetPointerTimestamp(input, 0), wind->sdlwindow, input->pointer_id, SDL_BUTTON_X2, false);
         }
 
 
@@ -740,9 +740,9 @@ static void pointer_handle_button_common(struct SDL_WaylandInput *input, uint32_
          * long as any button is still down, the capture remains).
          */
         if (state) { // update our mask of currently-pressed buttons
-            input->buttons_pressed |= SDL_BUTTON(sdl_button);
+            input->buttons_pressed |= SDL_BUTTON_MASK(sdl_button);
         } else {
-            input->buttons_pressed &= ~(SDL_BUTTON(sdl_button));
+            input->buttons_pressed &= ~(SDL_BUTTON_MASK(sdl_button));
         }
 
         // Don't modify the capture flag in relative mode.
@@ -760,7 +760,7 @@ static void pointer_handle_button_common(struct SDL_WaylandInput *input, uint32_
 
         if (!ignore_click) {
             SDL_SendMouseButton(Wayland_GetPointerTimestamp(input, time), window->sdlwindow, input->pointer_id,
-                                state ? SDL_PRESSED : SDL_RELEASED, sdl_button);
+                                sdl_button, (state != 0));
         }
     }
 }
@@ -1048,7 +1048,7 @@ static void touch_handler_up(void *data, struct wl_touch *touch, uint32_t serial
             SDL_SendTouch(Wayland_GetTouchTimestamp(input, timestamp), (SDL_TouchID)(uintptr_t)touch,
                           (SDL_FingerID)(id + 1), window_data->sdlwindow, false, x, y, 0.0f);
 
-            /* If the seat lacks pointer focus, the seat's keyboard focus is another window or NULL, this window curently
+            /* If the seat lacks pointer focus, the seat's keyboard focus is another window or NULL, this window currently
              * has mouse focus, and the surface has no active touch events, consider mouse focus to be lost.
              */
             if (!input->pointer_focus && input->keyboard_focus != window_data &&
@@ -1086,6 +1086,41 @@ static void touch_handler_frame(void *data, struct wl_touch *touch)
 
 static void touch_handler_cancel(void *data, struct wl_touch *touch)
 {
+    struct SDL_WaylandInput *input = (struct SDL_WaylandInput *)data;
+    struct SDL_WaylandTouchPoint *tp, *temp;
+
+    wl_list_for_each_safe (tp, temp, &touch_points, link) {
+        bool removed = false;
+
+        if (tp->surface) {
+            SDL_WindowData *window_data = (SDL_WindowData *)wl_surface_get_user_data(tp->surface);
+
+            if (window_data) {
+                const float x = (float)(wl_fixed_to_double(tp->fx) / window_data->current.logical_width);
+                const float y = (float)(wl_fixed_to_double(tp->fy) / window_data->current.logical_height);
+
+                SDL_SendTouch(0, (SDL_TouchID)(uintptr_t)touch,
+                              (SDL_FingerID)(tp->id + 1), window_data->sdlwindow, false, x, y, 0.0f);
+
+                // Remove the touch from the list before checking for still-active touches on the surface.
+                WAYLAND_wl_list_remove(&tp->link);
+                removed = true;
+
+                /* If the seat lacks pointer focus, the seat's keyboard focus is another window or NULL, this window currently
+                 * has mouse focus, and the surface has no active touch events, consider mouse focus to be lost.
+                 */
+                if (!input->pointer_focus && input->keyboard_focus != window_data &&
+                    SDL_GetMouseFocus() == window_data->sdlwindow && !Wayland_SurfaceHasActiveTouches(tp->surface)) {
+                    SDL_SetMouseFocus(NULL);
+                }
+            }
+        }
+
+        if (!removed) {
+            WAYLAND_wl_list_remove(&tp->link);
+        }
+        SDL_free(tp);
+    }
 }
 
 static const struct wl_touch_listener touch_listener = {
@@ -1549,7 +1584,7 @@ static void keyboard_handle_enter(void *data, struct wl_keyboard *keyboard,
         case SDLK_RGUI:
         case SDLK_MODE:
             Wayland_HandleModifierKeys(input, scancode, true);
-            SDL_SendKeyboardKeyIgnoreModifiers(0, input->keyboard_id, *key, scancode, SDL_PRESSED);
+            SDL_SendKeyboardKeyIgnoreModifiers(0, input->keyboard_id, *key, scancode, true);
             break;
         default:
             break;
@@ -1600,7 +1635,7 @@ static void keyboard_handle_leave(void *data, struct wl_keyboard *keyboard,
     }
 }
 
-static bool keyboard_input_get_text(char text[8], const struct SDL_WaylandInput *input, uint32_t key, Uint8 state, bool *handled_by_ime)
+static bool keyboard_input_get_text(char text[8], const struct SDL_WaylandInput *input, uint32_t key, bool down, bool *handled_by_ime)
 {
     SDL_WindowData *window = input->keyboard_focus;
     const xkb_keysym_t *syms;
@@ -1617,7 +1652,7 @@ static bool keyboard_input_get_text(char text[8], const struct SDL_WaylandInput 
     sym = syms[0];
 
 #ifdef SDL_USE_IME
-    if (SDL_IME_ProcessKeyEvent(sym, key + 8, state)) {
+    if (SDL_IME_ProcessKeyEvent(sym, key + 8, down)) {
         if (handled_by_ime) {
             *handled_by_ime = true;
         }
@@ -1625,7 +1660,7 @@ static bool keyboard_input_get_text(char text[8], const struct SDL_WaylandInput 
     }
 #endif
 
-    if (state == SDL_RELEASED) {
+    if (!down) {
         return false;
     }
 
@@ -1668,7 +1703,7 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard,
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
         SDL_Window *keyboard_focus = SDL_GetKeyboardFocus();
         if (keyboard_focus && SDL_TextInputActive(keyboard_focus)) {
-            has_text = keyboard_input_get_text(text, input, key, SDL_PRESSED, &handled_by_ime);
+            has_text = keyboard_input_get_text(text, input, key, true, &handled_by_ime);
         }
     } else {
         if (keyboard_repeat_key_is_set(&input->keyboard_repeat, key)) {
@@ -1680,12 +1715,12 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard,
             keyboard_repeat_handle(&input->keyboard_repeat, timestamp_raw_ns - input->keyboard_repeat.wl_press_time_ns);
             keyboard_repeat_clear(&input->keyboard_repeat);
         }
-        keyboard_input_get_text(text, input, key, SDL_RELEASED, &handled_by_ime);
+        keyboard_input_get_text(text, input, key, false, &handled_by_ime);
     }
 
     scancode = Wayland_get_scancode_from_key(input, key + 8);
     Wayland_HandleModifierKeys(input, scancode, state == WL_KEYBOARD_KEY_STATE_PRESSED);
-    SDL_SendKeyboardKeyIgnoreModifiers(Wayland_GetKeyboardTimestamp(input, time), input->keyboard_id, key, scancode, state == WL_KEYBOARD_KEY_STATE_PRESSED ? SDL_PRESSED : SDL_RELEASED);
+    SDL_SendKeyboardKeyIgnoreModifiers(Wayland_GetKeyboardTimestamp(input, time), input->keyboard_id, key, scancode, (state == WL_KEYBOARD_KEY_STATE_PRESSED));
 
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
         if (has_text && !(SDL_GetModState() & SDL_KMOD_CTRL)) {
@@ -1725,7 +1760,7 @@ static void keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard,
         char text[8];
         const uint32_t key = keyboard_repeat_get_key(&input->keyboard_repeat);
 
-        if (keyboard_input_get_text(text, input, key, SDL_PRESSED, NULL)) {
+        if (keyboard_input_get_text(text, input, key, true, NULL)) {
             keyboard_repeat_set_text(&input->keyboard_repeat, text);
         }
     }
@@ -1956,7 +1991,7 @@ static void data_offer_handle_offer(void *data, struct wl_data_offer *wl_data_of
 {
     SDL_WaylandDataOffer *offer = data;
     Wayland_data_offer_add_mime(offer, mime_type);
-    SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+    SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                  ". In wl_data_offer_listener . data_offer_handle_offer on data_offer 0x%08x for MIME '%s'\n",
                  (wl_data_offer ? WAYLAND_wl_proxy_get_id((struct wl_proxy *)wl_data_offer) : -1),
                  mime_type);
@@ -1965,7 +2000,7 @@ static void data_offer_handle_offer(void *data, struct wl_data_offer *wl_data_of
 static void data_offer_handle_source_actions(void *data, struct wl_data_offer *wl_data_offer,
                                              uint32_t source_actions)
 {
-    SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+    SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                  ". In wl_data_offer_listener . data_offer_handle_source_actions on data_offer 0x%08x for Source Actions '%d'\n",
                  (wl_data_offer ? WAYLAND_wl_proxy_get_id((struct wl_proxy *)wl_data_offer) : -1),
                  source_actions);
@@ -1974,7 +2009,7 @@ static void data_offer_handle_source_actions(void *data, struct wl_data_offer *w
 static void data_offer_handle_actions(void *data, struct wl_data_offer *wl_data_offer,
                                       uint32_t dnd_action)
 {
-    SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+    SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                  ". In wl_data_offer_listener . data_offer_handle_actions on data_offer 0x%08x for DND Actions '%d'\n",
                  (wl_data_offer ? WAYLAND_wl_proxy_get_id((struct wl_proxy *)wl_data_offer) : -1),
                  dnd_action);
@@ -1991,7 +2026,7 @@ static void primary_selection_offer_handle_offer(void *data, struct zwp_primary_
 {
     SDL_WaylandPrimarySelectionOffer *offer = data;
     Wayland_primary_selection_offer_add_mime(offer, mime_type);
-    SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+    SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                  ". In zwp_primary_selection_offer_v1_listener . primary_selection_offer_handle_offer on primary_selection_offer 0x%08x for MIME '%s'\n",
                  (zwp_primary_selection_offer_v1 ? WAYLAND_wl_proxy_get_id((struct wl_proxy *)zwp_primary_selection_offer_v1) : -1),
                  mime_type);
@@ -2011,7 +2046,7 @@ static void data_device_handle_data_offer(void *data, struct wl_data_device *wl_
         WAYLAND_wl_list_init(&(data_offer->mimes));
         wl_data_offer_set_user_data(id, data_offer);
         wl_data_offer_add_listener(id, &data_offer_listener, data_offer);
-        SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+        SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                      ". In wl_data_device_listener . data_device_handle_data_offer on data_offer 0x%08x\n",
                      (id ? WAYLAND_wl_proxy_get_id((struct wl_proxy *)id) : -1));
     }
@@ -2069,25 +2104,25 @@ static void data_device_handle_enter(void *data, struct wl_data_device *wl_data_
                 const float dx = (float)wl_fixed_to_double(x);
                 const float dy = (float)wl_fixed_to_double(y);
                 SDL_SendDropPosition(data_device->dnd_window, dx, dy);
-                SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+                SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                              ". In wl_data_device_listener . data_device_handle_enter on data_offer 0x%08x at %d x %d into window %d for serial %d\n",
                              WAYLAND_wl_proxy_get_id((struct wl_proxy *)id),
                              wl_fixed_to_int(x), wl_fixed_to_int(y), SDL_GetWindowID(data_device->dnd_window), serial);
             } else {
                 data_device->dnd_window = NULL;
-                SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+                SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                              ". In wl_data_device_listener . data_device_handle_enter on data_offer 0x%08x at %d x %d for serial %d\n",
                              WAYLAND_wl_proxy_get_id((struct wl_proxy *)id),
                              wl_fixed_to_int(x), wl_fixed_to_int(y), serial);
             }
         } else {
-            SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+            SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                          ". In wl_data_device_listener . data_device_handle_enter on data_offer 0x%08x at %d x %d for serial %d\n",
                          WAYLAND_wl_proxy_get_id((struct wl_proxy *)id),
                          wl_fixed_to_int(x), wl_fixed_to_int(y), serial);
         }
     } else {
-        SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+        SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                      ". In wl_data_device_listener . data_device_handle_enter on data_offer 0x%08x at %d x %d for serial %d\n",
                      -1, wl_fixed_to_int(x), wl_fixed_to_int(y), serial);
     }
@@ -2099,12 +2134,12 @@ static void data_device_handle_leave(void *data, struct wl_data_device *wl_data_
 
     if (data_device->drag_offer) {
         if (data_device->dnd_window) {
-            SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+            SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                          ". In wl_data_device_listener . data_device_handle_leave on data_offer 0x%08x from window %d for serial %d\n",
                          WAYLAND_wl_proxy_get_id((struct wl_proxy *)data_device->drag_offer->offer),
                          SDL_GetWindowID(data_device->dnd_window), data_device->drag_serial);
         } else {
-            SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+            SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                          ". In wl_data_device_listener . data_device_handle_leave on data_offer 0x%08x for serial %d\n",
                          WAYLAND_wl_proxy_get_id((struct wl_proxy *)data_device->drag_offer->offer),
                          data_device->drag_serial);
@@ -2112,7 +2147,7 @@ static void data_device_handle_leave(void *data, struct wl_data_device *wl_data_
         Wayland_data_offer_destroy(data_device->drag_offer);
         data_device->drag_offer = NULL;
     } else {
-        SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+        SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                      ". In wl_data_device_listener . data_device_handle_leave on data_offer 0x%08x for serial %d\n",
                      -1, -1);
     }
@@ -2134,13 +2169,13 @@ static void data_device_handle_motion(void *data, struct wl_data_device *wl_data
          *      hammer the DBus interface hundreds or even thousands of times per second.
          */
         SDL_SendDropPosition(data_device->dnd_window, dx, dy);
-        SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+        SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                      ". In wl_data_device_listener . data_device_handle_motion on data_offer 0x%08x at %d x %d in window %d serial %d\n",
                      WAYLAND_wl_proxy_get_id((struct wl_proxy *)data_device->drag_offer->offer),
                      wl_fixed_to_int(x), wl_fixed_to_int(y),
                      SDL_GetWindowID(data_device->dnd_window), data_device->drag_serial);
     } else {
-        SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+        SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                      ". In wl_data_device_listener . data_device_handle_motion on data_offer 0x%08x at %d x %d serial %d\n",
                      -1, wl_fixed_to_int(x), wl_fixed_to_int(y), -1);
     }
@@ -2151,7 +2186,7 @@ static void data_device_handle_drop(void *data, struct wl_data_device *wl_data_d
     SDL_WaylandDataDevice *data_device = data;
 
     if (data_device->drag_offer && data_device->dnd_window && (data_device->has_mime_file || data_device->has_mime_text)) {
-        SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+        SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                      ". In wl_data_device_listener . data_device_handle_drop on data_offer 0x%08x in window %d serial %d\n",
                      WAYLAND_wl_proxy_get_id((struct wl_proxy *)data_device->drag_offer->offer),
                      SDL_GetWindowID(data_device->dnd_window), data_device->drag_serial);
@@ -2233,13 +2268,47 @@ static void data_device_handle_drop(void *data, struct wl_data_device *wl_data_d
             wl_data_offer_finish(data_device->drag_offer->offer);
         }
     } else {
-        SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+        SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                      ". In wl_data_device_listener . data_device_handle_drop on data_offer 0x%08x serial %d\n",
                      -1, -1);
     }
 
     Wayland_data_offer_destroy(data_device->drag_offer);
     data_device->drag_offer = NULL;
+}
+
+static void notifyFromMimes(struct wl_list *mimes) {
+    int nformats = 0;
+    char **new_mime_types = NULL;
+    if (mimes) {
+        nformats = WAYLAND_wl_list_length(mimes);
+        size_t alloc_size = (nformats + 1) * sizeof(char *);
+
+        /* do a first pass to compute allocation size */
+        SDL_MimeDataList *item = NULL;
+        wl_list_for_each(item, mimes, link) {
+            alloc_size += SDL_strlen(item->mime_type) + 1;
+        }
+
+        new_mime_types = SDL_AllocateTemporaryMemory(alloc_size);
+        if (!new_mime_types) {
+            SDL_LogError(SDL_LOG_CATEGORY_INPUT, "unable to allocate new_mime_types");
+            return;
+        }
+
+        /* second pass to fill*/
+        char *strPtr = (char *)(new_mime_types + nformats + 1);
+        item = NULL;
+        int i = 0;
+        wl_list_for_each(item, mimes, link) {
+            new_mime_types[i] = strPtr;
+            strPtr = stpcpy(strPtr, item->mime_type) + 1;
+            i++;
+        }
+        new_mime_types[nformats] = NULL;
+    }
+
+    SDL_SendClipboardUpdate(false, new_mime_types, nformats);
 }
 
 static void data_device_handle_selection(void *data, struct wl_data_device *wl_data_device,
@@ -2252,7 +2321,7 @@ static void data_device_handle_selection(void *data, struct wl_data_device *wl_d
         offer = wl_data_offer_get_user_data(id);
     }
 
-    SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+    SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                  ". In data_device_listener . data_device_handle_selection on data_offer 0x%08x\n",
                  (id ? WAYLAND_wl_proxy_get_id((struct wl_proxy *)id) : -1));
     if (data_device->selection_offer != offer) {
@@ -2260,7 +2329,7 @@ static void data_device_handle_selection(void *data, struct wl_data_device *wl_d
         data_device->selection_offer = offer;
     }
 
-    SDL_SendClipboardUpdate();
+    notifyFromMimes(offer ? &offer->mimes : NULL);
 }
 
 static const struct wl_data_device_listener data_device_listener = {
@@ -2283,7 +2352,7 @@ static void primary_selection_device_handle_offer(void *data, struct zwp_primary
         zwp_primary_selection_offer_v1_set_user_data(id, primary_selection_offer);
         zwp_primary_selection_offer_v1_add_listener(id, &primary_selection_offer_listener, primary_selection_offer);
     }
-    SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+    SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                  ". In zwp_primary_selection_device_v1_listener . primary_selection_device_handle_offer on primary_selection_offer 0x%08x\n",
                  (id ? WAYLAND_wl_proxy_get_id((struct wl_proxy *)id) : -1));
 }
@@ -2302,11 +2371,11 @@ static void primary_selection_device_handle_selection(void *data, struct zwp_pri
         Wayland_primary_selection_offer_destroy(primary_selection_device->selection_offer);
         primary_selection_device->selection_offer = offer;
     }
-    SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+    SDL_LogTrace(SDL_LOG_CATEGORY_INPUT,
                  ". In zwp_primary_selection_device_v1_listener . primary_selection_device_handle_selection on primary_selection_offer 0x%08x\n",
                  (id ? WAYLAND_wl_proxy_get_id((struct wl_proxy *)id) : -1));
 
-    SDL_SendClipboardUpdate();
+    notifyFromMimes(offer ? &offer->mimes : NULL);
 }
 
 static const struct zwp_primary_selection_device_v1_listener primary_selection_device_listener = {
@@ -2486,7 +2555,7 @@ typedef struct SDL_WaylandPenTool  // a stylus, etc, on a tablet.
     float x;
     float y;
     bool frame_motion_set;
-    float frame_axes[SDL_PEN_NUM_AXES];
+    float frame_axes[SDL_PEN_AXIS_COUNT];
     Uint32 frame_axes_set;
     int frame_pen_down;
     int frame_buttons[3];
@@ -2590,12 +2659,8 @@ static void tablet_tool_handle_motion(void *data, struct zwp_tablet_tool_v2 *too
     SDL_Window *window = sdltool->tool_focus;
     if (window) {
         const SDL_WindowData *windowdata = window->internal;
-        const float sx_f = (float)wl_fixed_to_double(sx_w);
-        const float sy_f = (float)wl_fixed_to_double(sy_w);
-        const float sx = sx_f * windowdata->pointer_scale.x;
-        const float sy = sy_f * windowdata->pointer_scale.y;
-        sdltool->x = sx;
-        sdltool->y = sy;
+        sdltool->x = (float)(wl_fixed_to_double(sx_w) * windowdata->pointer_scale.x);
+        sdltool->y = (float)(wl_fixed_to_double(sy_w) * windowdata->pointer_scale.y);
         sdltool->frame_motion_set = true;
     }
 }
@@ -2690,14 +2755,14 @@ static void tablet_tool_handle_frame(void *data, struct zwp_tablet_tool_v2 *tool
     if (sdltool->frame_motion_set && (sdltool->frame_pen_down != -1)) {
         if (sdltool->frame_pen_down) {
             SDL_SendPenMotion(timestamp, instance_id, window, sdltool->x, sdltool->y);
-            SDL_SendPenTouch(timestamp, instance_id, window, SDL_PRESSED, 0);  // !!! FIXME: how do we know what tip is in use?
+            SDL_SendPenTouch(timestamp, instance_id, window, false, true);  // !!! FIXME: how do we know what tip is in use?
         } else {
-            SDL_SendPenTouch(timestamp, instance_id, window, SDL_RELEASED, 0);  // !!! FIXME: how do we know what tip is in use?
+            SDL_SendPenTouch(timestamp, instance_id, window, false, false); // !!! FIXME: how do we know what tip is in use?
             SDL_SendPenMotion(timestamp, instance_id, window, sdltool->x, sdltool->y);
         }
     } else {
         if (sdltool->frame_pen_down != -1) {
-            SDL_SendPenTouch(timestamp, instance_id, window, sdltool->frame_pen_down ? SDL_PRESSED : SDL_RELEASED, 0);  // !!! FIXME: how do we know what tip is in use?
+            SDL_SendPenTouch(timestamp, instance_id, window, false, (sdltool->frame_pen_down != 0));  // !!! FIXME: how do we know what tip is in use?
         }
 
         if (sdltool->frame_motion_set) {
@@ -2705,7 +2770,7 @@ static void tablet_tool_handle_frame(void *data, struct zwp_tablet_tool_v2 *tool
         }
     }
 
-    for (SDL_PenAxis i = 0; i < SDL_PEN_NUM_AXES; i++) {
+    for (SDL_PenAxis i = 0; i < SDL_PEN_AXIS_COUNT; i++) {
         if (sdltool->frame_axes_set & (1u << i)) {
             SDL_SendPenAxis(timestamp, instance_id, window, i, sdltool->frame_axes[i]);
         }
@@ -2714,7 +2779,7 @@ static void tablet_tool_handle_frame(void *data, struct zwp_tablet_tool_v2 *tool
     for (int i = 0; i < SDL_arraysize(sdltool->frame_buttons); i++) {
         const int state = sdltool->frame_buttons[i];
         if (state != -1) {
-            SDL_SendPenButton(timestamp, instance_id, window, state ? SDL_PRESSED : SDL_RELEASED, (Uint8) (i + 1));
+            SDL_SendPenButton(timestamp, instance_id, window, (Uint8)(i + 1), (state != 0));
             sdltool->frame_buttons[i] = -1;
         }
     }
@@ -3178,10 +3243,10 @@ bool Wayland_input_confine_pointer(struct SDL_WaylandInput *input, SDL_Window *w
     } else {
         SDL_Rect scaled_mouse_rect;
 
-        scaled_mouse_rect.x = (int)SDL_floorf((float)window->mouse_rect.x / w->pointer_scale.x);
-        scaled_mouse_rect.y = (int)SDL_floorf((float)window->mouse_rect.y / w->pointer_scale.y);
-        scaled_mouse_rect.w = (int)SDL_ceilf((float)window->mouse_rect.w / w->pointer_scale.x);
-        scaled_mouse_rect.h = (int)SDL_ceilf((float)window->mouse_rect.h / w->pointer_scale.y);
+        scaled_mouse_rect.x = (int)SDL_floor(window->mouse_rect.x / w->pointer_scale.x);
+        scaled_mouse_rect.y = (int)SDL_floor(window->mouse_rect.y / w->pointer_scale.y);
+        scaled_mouse_rect.w = (int)SDL_ceil(window->mouse_rect.w / w->pointer_scale.x);
+        scaled_mouse_rect.h = (int)SDL_ceil(window->mouse_rect.h / w->pointer_scale.y);
 
         confine_rect = wl_compositor_create_region(d->compositor);
         wl_region_add(confine_rect,
