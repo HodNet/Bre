@@ -8,28 +8,28 @@
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 
+#include "Renderer.hpp"
+#include "../utils/SDL_Utils.hpp"
 #include "../../controller/components/Rectangle.hpp"
 #include "../../model/entities/Arrow.hpp"
-#include "Renderer.hpp"
-#include "../../model/worlds/FreePlayWorld.hpp"
+#include "../../model/worlds/World.hpp"
 
 
 class JoystickRenderer : public Renderer {
+
+private:
     Arrow* joystick;
     bool stopRendering = false;
     double angle;
 
     SDL_Renderer *renderer;
-    SDL_FPoint SDLcenter;
+    SDL_FPoint AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA;
     SDL_FRect SRCcenter{0, 0, 54, 55};
-    SDL_FRect SRCbody{0, 0, 54, 362};
+    SDL_FRect SRCbody{0, 0, 1280, 427};
     SDL_FRect SRCtip{0, 0, 54, 54};
     SDL_FRect DSTcenter{0, 0, 26, 26};
-    SDL_FRect DSTbody{0, 0, 26, 1};
+    SDL_FRect DSTbody{0, 0, 1, 26};
     SDL_FRect DSTtip{0, 0, 26, 26};
-    SDL_Surface *SRFcenter;
-    SDL_Surface *SRFbody;
-    SDL_Surface *SRFtip;
     SDL_Texture *TXRcenter;
     SDL_Texture *TXRbody;
     SDL_Texture *TXRtip;
@@ -61,10 +61,10 @@ public:
             World::setJoystick(joystick);
             joystick->setCenter(input_x, input_y);
 
-            SDLcenter.x = joystick->getCenter()->x;
-            SDLcenter.y = joystick->getCenter()->y;
             DSTcenter.x = joystick->getCenter()->x;
             DSTcenter.y = joystick->getCenter()->y;
+
+            SDL_Utils::SDL_ConvertCoordinatesForRendering(DSTcenter, World::getScreenSize()->h);
         }
     }
 
@@ -80,13 +80,18 @@ public:
         if(joystick->getCenter() != nullptr) {
             joystick->setVector(input_x, input_y);
             angle = joystick->getVector()->getAngleInDegrees();
+            SDL_Utils::SDL_ConvertAngleForRendering(angle);
 
-            DSTbody.h = 2 * joystick->getVector()->getMagnitude();
+            DSTbody.w = joystick->getVector()->getMagnitude();
+            DSTbody.w += DSTbody.w/100; // adding a bit more length to make it connect with the tip
             DSTbody.x = joystick->getCenter()->x;
-            DSTbody.y = joystick->getCenter()->y + DSTcenter.h / 2 - DSTbody.h / 2;
+            DSTbody.y = joystick->getCenter()->y;
 
             DSTtip.x = joystick->getTip().x;
             DSTtip.y = joystick->getTip().y;
+
+            SDL_Utils::SDL_ConvertCoordinatesForRendering(DSTbody, World::getScreenSize()->h);
+            SDL_Utils::SDL_ConvertCoordinatesForRendering(DSTtip, World::getScreenSize()->h);
         }
     }
 
@@ -97,11 +102,14 @@ public:
         if(joystick == nullptr)
             return;
 
+        //SDL_Log("Angle: %f", angle);
+
         if(joystick->getCenter() != nullptr) {
             SDL_RenderTexture(renderer, TXRcenter, &SRCcenter, &DSTcenter);
             if(joystick->getVector() != nullptr) {
-                SDL_RenderTextureRotated(renderer, TXRbody, &SRCbody, &DSTbody, angle, &SDLcenter, SDL_FLIP_NONE);
-                SDL_RenderTextureRotated(renderer, TXRtip, &SRCtip, &DSTtip, angle, &SDLcenter, SDL_FLIP_NONE);
+                SDL_FPoint center = {DSTcenter.w/2, DSTcenter.h/2};
+                SDL_RenderTextureRotated(renderer, TXRbody, &SRCbody, &DSTbody, angle, &center, SDL_FLIP_NONE);
+                SDL_RenderTextureRotated(renderer, TXRtip, &SRCtip, &DSTtip, angle, &center, SDL_FLIP_NONE);
             }
         }
     }
@@ -116,15 +124,6 @@ public:
 
     void destroy() override {
         joystick = nullptr; // The world will take care of deleting the joystick
-
-        if(SRFcenter != nullptr && SRFbody != nullptr && SRFtip != nullptr) {
-            SDL_DestroySurface(SRFcenter);
-            SDL_DestroySurface(SRFbody);
-            SDL_DestroySurface(SRFtip);
-            SRFcenter = nullptr;
-            SRFbody = nullptr;
-            SRFtip = nullptr;
-        }
 
         if(TXRcenter != nullptr && TXRbody != nullptr && TXRtip != nullptr) {
             SDL_DestroyTexture(TXRcenter);

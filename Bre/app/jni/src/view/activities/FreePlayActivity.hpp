@@ -11,6 +11,7 @@
 #include "../renderers/LevelBackgroundRenderer.hpp"
 #include "../renderers/PlayerRenderer.hpp"
 #include "../renderers/JoystickRenderer.hpp"
+#include "../utils/SDL_Utils.hpp"
 
 class FreePlayActivity {
 
@@ -54,18 +55,26 @@ public:
             SDL_Event e;
             if(SDL_PollEvent(&e)) {
                 SDL_Log("Event type: %d", e.type);
+
+                int input_x = e.tfinger.x * screen->w;
+                int input_y = e.tfinger.y * screen->h;
+                SDL_Utils::SDL_ConvertCoordinatesForVerticalOrientation(input_x, input_y, screen->h);
+
                 switch(e.type) {
                     case SDL_EVENT_FINGER_DOWN:
                         if(e.tfinger.fingerID==1)
-                            joystickRenderer.buildCenter(e.tfinger.x, e.tfinger.y);
+                            joystickRenderer.buildCenter(input_x, input_y);
                         break;
                     case SDL_EVENT_FINGER_MOTION:
                         if(e.tfinger.fingerID==1)
-                            joystickRenderer.buildEntireArrow(e.tfinger.x, e.tfinger.y);
+                            joystickRenderer.buildEntireArrow(input_x, input_y);
                         break;
                     case SDL_EVENT_FINGER_UP:
                         if(e.tfinger.fingerID==1)
                             joystickRenderer.stop();
+                        break;
+                    case SDL_EVENT_QUIT:
+                        playing = false;
                         break;
                 }
             }

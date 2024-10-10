@@ -74,11 +74,22 @@ struct Vector2D {
     }
 
     double getAngle() const {
-        return atan2(y, x);
+        double angle;
+        if(x == 0) {
+            if(y > 0)
+                angle = M_PI / 2;
+            else
+                angle = 3 * M_PI / 2;
+        } else {
+            angle = atan(y/x);
+            if(x < 0)
+                angle += M_PI;
+        }
+        return angle;
     }
 
     double getAngleInDegrees() const {
-        return atan2(y, x) * 180 / M_PI;
+        return getAngle() * 180 / M_PI;
     }
 };
 
