@@ -8,7 +8,8 @@
 #include "../entities/Player.hpp"
 #include "../entities/Arrow.hpp"
 #include "World.hpp"
-#include "../../controller/utils/StopWatch.hpp"
+#include "../../controller/components/StopWatch.hpp"
+#include "../../controller/systems/MovementSystem.hpp"
 
 class FreePlayWorld : virtual public World {
 
@@ -18,12 +19,20 @@ public:
         player = Player::getInstance(screen_w, screen_h);
         gameTimer = new StopWatch(TimeUnit::MILLISECONDS);
         gameTimer->start();
+        frameTimer = new StopWatch(TimeUnit::MICROSECONDS);
+    }
+
+    void update() override {
+        MovementSystem::movePlayer(player, joystick, frameTimer);
+        frameTimer->start();
     }
 
     void exit() override {
+        delete screenSize; screenSize = nullptr;
         delete player; player = nullptr;
         delete gameTimer; gameTimer = nullptr;
         delete joystick; joystick = nullptr;
+        delete frameTimer; frameTimer = nullptr;
     }
 };
 

@@ -36,6 +36,8 @@ public:
     }
 
     Point2D getTip() const {
+        if(center == nullptr || vector == nullptr)
+            throw std::runtime_error("NullPointerException calling getTip() in Arrow.hpp: Arrow center or vector not initialized.");
         return Point2D(center->x + vector->x, center->y + vector->y);
     }
 

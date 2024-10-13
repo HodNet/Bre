@@ -9,7 +9,7 @@
 #include <SDL3_image/SDL_image.h>
 
 #include "Renderer.hpp"
-#include "../utils/SDL_Utils.hpp"
+#include "../Mediator.hpp"
 #include "../../controller/components/Rectangle.hpp"
 #include "../../model/entities/Arrow.hpp"
 #include "../../model/worlds/World.hpp"
@@ -23,7 +23,7 @@ private:
     double angle;
 
     SDL_Renderer *renderer;
-    SDL_FPoint AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA;
+    SDL_FPoint AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA; // Greetings, I shall present you the "Munch variable", the most important variable in the entire codebase and the greatest mystery of all computer science history. This variable is never used in the code, but somehow, if you remove it, the app will crash, so you better not touch it. But it doesn't end here, you can rename this variable and the app will be fine, you can even change it to a different type, for example, an int, and the app will still work. But if you dare remove it, if you dare let this class have less than 14 variables, the app will crash. It's told that the one who will be able to solve the mystery behind the "Munch variable", will be granted with the knowledge to answer to all the greatest questions of the universe, the human brain, the nature of reality and the meaning of life itself! But for now, we can only wonder, we can only dream, we can only hope.
     SDL_FRect SRCcenter{0, 0, 54, 55};
     SDL_FRect SRCbody{0, 0, 1280, 427};
     SDL_FRect SRCtip{0, 0, 54, 54};
@@ -58,13 +58,13 @@ public:
 
         if(joystick == nullptr) {
             joystick = new Arrow();
-            World::setJoystick(joystick);
             joystick->setCenter(input_x, input_y);
+            World::setJoystick(joystick);
 
             DSTcenter.x = joystick->getCenter()->x;
             DSTcenter.y = joystick->getCenter()->y;
 
-            SDL_Utils::SDL_ConvertCoordinatesForRendering(DSTcenter, World::getScreenSize()->h);
+            Mediator::SDL_ConvertCoordinatesForRendering(DSTcenter, World::getScreenSize()->h);
         }
     }
 
@@ -80,7 +80,7 @@ public:
         if(joystick->getCenter() != nullptr) {
             joystick->setVector(input_x, input_y);
             angle = joystick->getVector()->getAngleInDegrees();
-            SDL_Utils::SDL_ConvertAngleForRendering(angle);
+            Mediator::SDL_ConvertAngleForRendering(angle);
 
             DSTbody.w = joystick->getVector()->getMagnitude();
             DSTbody.w += DSTbody.w/100; // adding a bit more length to make it connect with the tip
@@ -90,8 +90,8 @@ public:
             DSTtip.x = joystick->getTip().x;
             DSTtip.y = joystick->getTip().y;
 
-            SDL_Utils::SDL_ConvertCoordinatesForRendering(DSTbody, World::getScreenSize()->h);
-            SDL_Utils::SDL_ConvertCoordinatesForRendering(DSTtip, World::getScreenSize()->h);
+            Mediator::SDL_ConvertCoordinatesForRendering(DSTbody, World::getScreenSize()->h);
+            Mediator::SDL_ConvertCoordinatesForRendering(DSTtip, World::getScreenSize()->h);
         }
     }
 

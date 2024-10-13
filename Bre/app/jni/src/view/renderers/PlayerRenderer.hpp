@@ -6,8 +6,11 @@
 #define BRE_PLAYERRENDERER_HPP
 
 #include <SDL3/SDL.h>
+#include "Renderer.hpp"
+#include "../Mediator.hpp"
 #include "../../model/entities/Player.hpp"
 #include "../../model/worlds/World.hpp"
+
 
 class PlayerRenderer : public Renderer {
 
@@ -34,6 +37,7 @@ public:
                 (float) player->getRect().w,
                 (float) player->getRect().h
         };
+        Mediator::SDL_ConvertCoordinatesForRendering(playerRect, World::getScreenSize()->h);
 
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderFillRect(renderer, &playerRect);

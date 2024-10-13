@@ -62,7 +62,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
     private static final int SDL_MINOR_VERSION = 1;
     private static final int SDL_MICRO_VERSION = 3;
 /*
-    // Display InputType.SOURCE/CLASS of events and devices
+    // Display TouchInputType.SOURCE/CLASS of events and devices
     //
     // SDLActivity.debugSource(device.getSources(), "device[" + device.getName() + "]");
     // SDLActivity.debugSource(event.getSource(), "event");

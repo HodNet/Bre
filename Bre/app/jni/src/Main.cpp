@@ -14,6 +14,7 @@ const Rectangle* World::screenSize = nullptr;
 Player* World::player = nullptr;
 StopWatch* World::gameTimer = nullptr;
 Arrow* World::joystick = nullptr;
+StopWatch* World::frameTimer = nullptr;
 
 class Main {
 

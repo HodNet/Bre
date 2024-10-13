@@ -6,7 +6,7 @@
 #define BRE_WORLD_HPP
 
 #include "../../controller/components/Rectangle.hpp"
-#include "controller/utils/StopWatch.hpp"
+#include "controller/components/StopWatch.hpp"
 
 /**
  * This classes are static containers of all the entities in the world of a game.
@@ -24,6 +24,7 @@ protected:
     static Player* player;
     static StopWatch* gameTimer;
     static Arrow* joystick;
+    static StopWatch* frameTimer;
 
 public:
     /**
@@ -31,6 +32,12 @@ public:
      * This function should set the screen size and initialize all the entities in the world.
      */
     virtual void enter(unsigned int screen_w, unsigned int screen_h) = 0;
+
+    /**
+     * Should be called every frame.
+     * This function should update all the entities in the world.
+     */
+    virtual void update() = 0;
 
     /**
      * Should be called when the player is leaving the world.
@@ -56,6 +63,10 @@ public:
 
     static Arrow* getJoystick() {
         return joystick;
+    }
+
+    static StopWatch* getFrameTimer() {
+        return frameTimer;
     }
 
     static void setJoystick(Arrow* new_joystick) {

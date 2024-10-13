@@ -26,7 +26,7 @@ class StopWatch {
 public:
     StopWatch(TimeUnit timeUnit = TimeUnit::MILLISECONDS) : timeUnit(timeUnit) {}
 
-    void start() {
+    void resume() {
         begin = steady_clock::now();
         running = true;
     }
@@ -71,9 +71,9 @@ public:
         running = false;
     }
 
-    void restart() {
+    void start() {
         reset();
-        start();
+        resume();
     }
 };
 

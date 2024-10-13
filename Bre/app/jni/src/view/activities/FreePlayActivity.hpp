@@ -8,20 +8,24 @@
 #include <SDL3/SDL.h>
 
 #include "../../model/worlds/FreePlayWorld.hpp"
+#include "../../controller/systems/InGameInputSystem.hpp"
 #include "../renderers/LevelBackgroundRenderer.hpp"
 #include "../renderers/PlayerRenderer.hpp"
 #include "../renderers/JoystickRenderer.hpp"
-#include "../utils/SDL_Utils.hpp"
+#include "../Mediator.hpp"
+#include "model/entities/TouchInput.hpp"
 
 class FreePlayActivity {
 
     bool playing = false;
     bool developer_mode = false;
-    FreePlayWorld world;
+    FreePlayWorld freePlayWorld;
+
+    InGameInputSystem inGameInputSystem;
 
     const SDL_DisplayMode* screen;
-    SDL_Window* gameWindow = nullptr;
-    SDL_Renderer* gameRenderer = nullptr;
+    SDL_Window* freePlayWindow = nullptr;
+    SDL_Renderer* freePlayRenderer = nullptr;
 
     //  Renderers
     LevelBackgroundRenderer levelBackgroundRenderer;
@@ -31,59 +35,63 @@ class FreePlayActivity {
 
 public:
     FreePlayActivity(const SDL_DisplayMode* screen) : screen(screen) {
-        gameWindow = SDL_CreateWindow("Game", screen->w, screen->h, SDL_WINDOW_VULKAN | SDL_WINDOW_FULLSCREEN);
-        if (gameWindow == NULL) {
+        freePlayWindow = SDL_CreateWindow("Game", screen->w, screen->h, SDL_WINDOW_VULKAN | SDL_WINDOW_FULLSCREEN);
+        if (freePlayWindow == NULL) {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not create window: %s\n", SDL_GetError());
             //TODO: Get back to main menu
         }
-        gameRenderer = SDL_CreateRenderer(gameWindow, NULL);
-        if (gameRenderer == NULL) {
+        freePlayRenderer = SDL_CreateRenderer(freePlayWindow, NULL);
+        if (freePlayRenderer == NULL) {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not create renderer: %s\n", SDL_GetError());
             //TODO: Get back to main menu
         }
 
-        levelBackgroundRenderer = LevelBackgroundRenderer(gameRenderer);
-        playerRenderer = PlayerRenderer(gameRenderer);
-        joystickRenderer = JoystickRenderer(gameRenderer);
+        levelBackgroundRenderer = LevelBackgroundRenderer(freePlayRenderer);
+        playerRenderer = PlayerRenderer(freePlayRenderer);
+        joystickRenderer = JoystickRenderer(freePlayRenderer);
     }
 
     void run() {
         playing = true;
-        world.enter(screen->w, screen->h);
+        freePlayWorld.enter(screen->w, screen->h);
 
         while (playing) {
             SDL_Event e;
             if(SDL_PollEvent(&e)) {
                 SDL_Log("Event type: %d", e.type);
 
-                int input_x = e.tfinger.x * screen->w;
-                int input_y = e.tfinger.y * screen->h;
-                SDL_Utils::SDL_ConvertCoordinatesForVerticalOrientation(input_x, input_y, screen->h);
+                TouchInput* touchInput = Mediator::SDL_GetTouchInput(e, screen->w, screen->h);
 
-                switch(e.type) {
-                    case SDL_EVENT_FINGER_DOWN:
-                        if(e.tfinger.fingerID==1)
-                            joystickRenderer.buildCenter(input_x, input_y);
+                //Handle render
+                switch(touchInput->type) {
+                    case TouchInputType::SCREEN_TOUCH:
+                        if(touchInput->fingerID==1)
+                            joystickRenderer.buildCenter(touchInput->x, touchInput->y);
                         break;
-                    case SDL_EVENT_FINGER_MOTION:
-                        if(e.tfinger.fingerID==1)
-                            joystickRenderer.buildEntireArrow(input_x, input_y);
+                    case TouchInputType::SCREEN_SCROLL:
+                        if(touchInput->fingerID==1)
+                            joystickRenderer.buildEntireArrow(touchInput->x, touchInput->y);
                         break;
-                    case SDL_EVENT_FINGER_UP:
-                        if(e.tfinger.fingerID==1)
+                    case TouchInputType::SCREEN_RELEASE:
+                        if(touchInput->fingerID==1)
                             joystickRenderer.stop();
                         break;
-                    case SDL_EVENT_QUIT:
-                        playing = false;
-                        break;
                 }
+
+                //Handle logic
+                inGameInputSystem.handleInput(touchInput);
+
+                if(e.type == SDL_EVENT_QUIT)
+                    playing = false;
             }
 
-            SDL_RenderClear(gameRenderer);
+            freePlayWorld.update();
+
+            SDL_RenderClear(freePlayRenderer);
             levelBackgroundRenderer.render();
             playerRenderer.render();
             joystickRenderer.render();
-            SDL_RenderPresent(gameRenderer);
+            SDL_RenderPresent(freePlayRenderer);
 
         }
     }
@@ -93,9 +101,9 @@ public:
         levelBackgroundRenderer.destroy();
         playerRenderer.destroy();
         joystickRenderer.destroy();
-        world.exit();
-        SDL_DestroyRenderer(gameRenderer);
-        SDL_DestroyWindow(gameWindow);
+        freePlayWorld.exit();
+        SDL_DestroyRenderer(freePlayRenderer);
+        SDL_DestroyWindow(freePlayWindow);
     }
 
 };

@@ -34,6 +34,7 @@ struct Vector2D {
     }
 
     Vector2D operator/(float scalar) const {
+        scalar += 0.00001f; // Avoid division by zero
         return Vector2D(x / scalar, y / scalar);
     }
 
@@ -56,6 +57,7 @@ struct Vector2D {
     }
 
     Vector2D& operator/=(float scalar) {
+        scalar += 0.00001f; // Avoid division by zero
         x /= scalar;
         y /= scalar;
         return *this;

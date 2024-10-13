@@ -3,13 +3,15 @@
 
 #include "../../controller/components/Vector2D.hpp"
 #include "../../controller/components/Rectangle.hpp"
+#include "../states/PlayerState.hpp"
 
 /**
  * Singleton class representing the main player. There can only be one instance of the player at a time.
  */
 class Player {
     Rectangle rect;
-    const static int speed = 3;
+    const float speed = 500.0f; // pixels per second
+    PlayerState state;
     static Player* instance;
 
     Player(unsigned int screen_w, unsigned int screen_h) :
@@ -18,7 +20,9 @@ class Player {
                 screen_h/2 - screen_w/20/2,
                 screen_w/20,
                 screen_w/20
-        ) {}
+        ) {
+        state = PlayerState::IDLE;
+    }
 
 public:
     static Player* getInstance(unsigned int screen_w, unsigned int screen_h) {
@@ -30,6 +34,23 @@ public:
 
     Rectangle getRect() const {
         return rect;
+    }
+
+    PlayerState getState() const {
+        return state;
+    }
+
+    const float getSpeed() const {
+        return speed;
+    }
+
+    void setState(PlayerState state) {
+        this->state = state;
+    }
+
+    void setPosition(float x, float y) {
+        rect.setX(x);
+        rect.setY(y);
     }
 
     ~Player() {
