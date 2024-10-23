@@ -10,6 +10,7 @@
 
 class InGameInputSystem {
     TouchInput previousInput_1; // previous input from finger with ID 1
+    bool gameStarted = false;
 
 public:
     InGameInputSystem() = default;
@@ -22,8 +23,13 @@ public:
 
         switch (touchInput->type) {
             case TouchInputType::SCREEN_SCROLL:
-                if(touchInput->fingerID == 1)
+                if(touchInput->fingerID == 1) {
                     InGameEventsSystem::handleEvent(InGameEvent::START_PLAYER_MOVEMENT);
+                    if (!gameStarted) {
+                        InGameEventsSystem::handleEvent(InGameEvent::START_GAME);
+                        gameStarted = true;
+                    }
+                }
                 break;
             case TouchInputType::SCREEN_TAP:
                 if(touchInput->fingerID == 1)

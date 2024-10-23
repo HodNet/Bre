@@ -19,6 +19,7 @@ struct Rectangle {
 
     Rectangle() : x(0), y(0), w(0), h(0) {}
     Rectangle(float x, float y, float w, float h) : x(x), y(y), w(w), h(h) {}
+    Rectangle(const Rectangle& r) : x(r.x), y(r.y), w(r.w), h(r.h) {}
 
     Rectangle& operator=(const Rectangle& r) {
         x = r.x;

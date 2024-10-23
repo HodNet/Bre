@@ -5,8 +5,14 @@
 #ifndef BRE_WORLD_HPP
 #define BRE_WORLD_HPP
 
+#include <vector>
+
 #include "../../controller/components/Rectangle.hpp"
-#include "controller/components/StopWatch.hpp"
+#include "../../controller/components/StopWatch.hpp"
+#include "../../controller/systems/MovementSystem.hpp"
+#include "../../model/entities/Game.hpp"
+#include "../../model/entities/Player.hpp"
+#include "../../model/entities/Arrow.hpp"
 
 /**
  * This classes are static containers of all the entities in the world of a game.
@@ -18,13 +24,16 @@
  *
  */
 class World{
+
 protected:
     //Entities contained in all Worlds
     static const Rectangle* screenSize;
+    static Game* game;
     static Player* player;
-    static StopWatch* gameTimer;
     static Arrow* joystick;
-    static StopWatch* frameTimer;
+
+    //Systems used in all Worlds
+    MovementSystem movementSystem;
 
 public:
     /**
@@ -57,16 +66,12 @@ public:
         return player;
     }
 
-    static StopWatch* getGameTimer() {
-        return gameTimer;
+    static Game* getGame() {
+        return game;
     }
 
     static Arrow* getJoystick() {
         return joystick;
-    }
-
-    static StopWatch* getFrameTimer() {
-        return frameTimer;
     }
 
     static void setJoystick(Arrow* new_joystick) {

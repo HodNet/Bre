@@ -4,6 +4,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <SDL3_image/SDL_image.h>
+#include <vector>
 #include "view/activities/FreePlayActivity.hpp"
 
 // Singleton declarations
@@ -11,10 +12,10 @@ Player* Player::instance = nullptr;
 
 // Static objects declarations
 const Rectangle* World::screenSize = nullptr;
+Game* World::game = nullptr;
 Player* World::player = nullptr;
-StopWatch* World::gameTimer = nullptr;
 Arrow* World::joystick = nullptr;
-StopWatch* World::frameTimer = nullptr;
+std::map<int, Clone>* FreePlayWorld::clones = nullptr;
 
 class Main {
 

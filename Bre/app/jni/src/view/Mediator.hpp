@@ -17,7 +17,7 @@ public:
         y = screen_height - y;
     }
 
-    static void SDL_ConvertCoordinatesForRendering(SDL_FRect &rect, int screen_height) {
+    static void SDL_ConvertCoordinatesForRendering(SDL_FRect &rect, float screen_height) {
         if(rect.y<0 || rect.y>screen_height)
             return;
 

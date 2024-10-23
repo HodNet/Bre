@@ -10,6 +10,7 @@
 #include "MovementSystem.hpp"
 
 enum class InGameEvent {
+    START_GAME,
     START_PLAYER_MOVEMENT,
     STOP_PLAYER_MOVEMENT
 };
@@ -19,6 +20,9 @@ class InGameEventsSystem {
 public:
     static void handleEvent(InGameEvent event) {
         switch (event) {
+            case InGameEvent::START_GAME:
+                World::getGame()->start();
+                break;
             case InGameEvent::START_PLAYER_MOVEMENT:
                 World::getPlayer()->setState(PlayerState::MOVING);
                 break;

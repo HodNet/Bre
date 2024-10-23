@@ -7,13 +7,14 @@
 
 #include <SDL3/SDL.h>
 
+#include "../../model/entities/TouchInput.hpp"
 #include "../../model/worlds/FreePlayWorld.hpp"
 #include "../../controller/systems/InGameInputSystem.hpp"
-#include "../renderers/LevelBackgroundRenderer.hpp"
-#include "../renderers/PlayerRenderer.hpp"
-#include "../renderers/JoystickRenderer.hpp"
+#include "../../view/renderers/LevelBackgroundRenderer.hpp"
+#include "../../view/renderers/PlayerRenderer.hpp"
+#include "../../view/renderers/JoystickRenderer.hpp"
+#include "../../view/renderers/ClonesRenderer.hpp"
 #include "../Mediator.hpp"
-#include "model/entities/TouchInput.hpp"
 
 class FreePlayActivity {
 
@@ -31,6 +32,7 @@ class FreePlayActivity {
     LevelBackgroundRenderer levelBackgroundRenderer;
     PlayerRenderer playerRenderer;
     JoystickRenderer joystickRenderer;
+    ClonesRenderer clonesRenderer;
 
 
 public:
@@ -49,6 +51,7 @@ public:
         levelBackgroundRenderer = LevelBackgroundRenderer(freePlayRenderer);
         playerRenderer = PlayerRenderer(freePlayRenderer);
         joystickRenderer = JoystickRenderer(freePlayRenderer);
+        clonesRenderer = ClonesRenderer(freePlayRenderer);
     }
 
     void run() {
@@ -91,6 +94,7 @@ public:
             levelBackgroundRenderer.render();
             playerRenderer.render();
             joystickRenderer.render();
+            clonesRenderer.render();
             SDL_RenderPresent(freePlayRenderer);
 
         }
@@ -101,6 +105,7 @@ public:
         levelBackgroundRenderer.destroy();
         playerRenderer.destroy();
         joystickRenderer.destroy();
+        clonesRenderer.destroy();
         freePlayWorld.exit();
         SDL_DestroyRenderer(freePlayRenderer);
         SDL_DestroyWindow(freePlayWindow);

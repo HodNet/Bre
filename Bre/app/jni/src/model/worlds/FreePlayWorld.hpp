@@ -5,34 +5,49 @@
 #ifndef BRE_FREEPLAYWORLD_HPP
 #define BRE_FREEPLAYWORLD_HPP
 
-#include "../entities/Player.hpp"
-#include "../entities/Arrow.hpp"
+#include <map>
+
 #include "World.hpp"
+#include "../../model/entities/Player.hpp"
+#include "../../model/entities/Arrow.hpp"
 #include "../../controller/components/StopWatch.hpp"
 #include "../../controller/systems/MovementSystem.hpp"
+#include "../../controller/systems/ClonesSystem.hpp"
 
 class FreePlayWorld : virtual public World {
+
+private:
+    //Entities
+    static std::map<int, Clone>* clones;
+
+    //Systems
+    ClonesSystem clonesSystem;
 
 public:
     void enter(unsigned int screen_w, unsigned int screen_h) override {
         setScreenSize(screen_w, screen_h);
+        game = new Game();
         player = Player::getInstance(screen_w, screen_h);
-        gameTimer = new StopWatch(TimeUnit::MILLISECONDS);
-        gameTimer->start();
-        frameTimer = new StopWatch(TimeUnit::MICROSECONDS);
+        clones = new std::map<int, Clone>();
     }
 
     void update() override {
-        MovementSystem::movePlayer(player, joystick, frameTimer);
-        frameTimer->start();
+        movementSystem.movePlayer(player, joystick);
+        clonesSystem.updatePlayerPath(player, game);
+        clonesSystem.addCloneEveryThreeSeconds(clones, game, screenSize);
+        clonesSystem.moveAllClones(clones);
     }
 
     void exit() override {
         delete screenSize; screenSize = nullptr;
         delete player; player = nullptr;
-        delete gameTimer; gameTimer = nullptr;
+        delete game; game = nullptr;
         delete joystick; joystick = nullptr;
-        delete frameTimer; frameTimer = nullptr;
+        delete clones; clones = nullptr;
+    }
+
+    static std::map<int, Clone>* getClones() {
+        return clones;
     }
 };
 

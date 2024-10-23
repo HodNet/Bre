@@ -18,7 +18,7 @@ enum class TimeUnit {
 
 class StopWatch {
     time_point<steady_clock> begin;
-    time_point<steady_clock> end;
+    mutable time_point<steady_clock> end;
     long long unsigned int time_until_last_stop = 0;
     TimeUnit timeUnit;
     bool running = false;
@@ -31,7 +31,7 @@ public:
         running = true;
     }
 
-    long long unsigned int now() {
+    long long unsigned int now() const {
         long long unsigned int elapsed = time_until_last_stop;
         if (running) {
             end = steady_clock::now();
