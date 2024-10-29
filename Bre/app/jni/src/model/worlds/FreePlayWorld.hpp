@@ -17,6 +17,8 @@
 class FreePlayWorld : virtual public World {
 
 private:
+    bool alreadyEntered = false;
+
     //Entities
     static std::map<int, Clone>* clones;
 
@@ -25,16 +27,19 @@ private:
 
 public:
     void enter(unsigned int screen_w, unsigned int screen_h) override {
-        setScreenSize(screen_w, screen_h);
-        game = new Game();
-        player = Player::getInstance(screen_w, screen_h);
-        clones = new std::map<int, Clone>();
+        if(!alreadyEntered) {
+            setScreenSize(screen_w, screen_h);
+            game = new Game();
+            player = Player::getInstance(screen_w, screen_h);
+            clones = new std::map<int, Clone>();
+            alreadyEntered = true;
+        }
     }
 
     void update() override {
         movementSystem.movePlayer(player, joystick);
         clonesSystem.updatePlayerPath(player, game);
-        clonesSystem.addCloneEveryThreeSeconds(clones, game, screenSize);
+        clonesSystem.addCloneEveryTwoSeconds(clones, game, screenSize);
         clonesSystem.moveAllClones(clones);
     }
 

@@ -51,19 +51,21 @@ public:
     }
 
     void stop() {
-        end = steady_clock::now();
-        switch (timeUnit) {
-            case TimeUnit::MICROSECONDS:
-                time_until_last_stop += duration_cast<microseconds>(end - begin).count();
-                break;
-            case TimeUnit::MILLISECONDS:
-                time_until_last_stop += duration_cast<milliseconds>(end - begin).count();
-                break;
-            case TimeUnit::SECONDS:
-                time_until_last_stop += duration_cast<seconds>(end - begin).count();
-                break;
+        if(running) {
+            end = steady_clock::now();
+            switch (timeUnit) {
+                case TimeUnit::MICROSECONDS:
+                    time_until_last_stop += duration_cast<microseconds>(end - begin).count();
+                    break;
+                case TimeUnit::MILLISECONDS:
+                    time_until_last_stop += duration_cast<milliseconds>(end - begin).count();
+                    break;
+                case TimeUnit::SECONDS:
+                    time_until_last_stop += duration_cast<seconds>(end - begin).count();
+                    break;
+            }
+            running = false;
         }
-        running = false;
     }
 
     void reset() {

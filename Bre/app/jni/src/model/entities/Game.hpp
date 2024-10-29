@@ -18,23 +18,31 @@ public:
     Game() : timer(TimeUnit::MILLISECONDS), state(GameState::NOT_STARTED) {}
 
     void start() {
-        timer.start();
-        state = GameState::PLAYING;
+        if (state == GameState::NOT_STARTED) {
+            timer.start();
+            state = GameState::PLAYING;
+        }
     }
 
     void pause() {
-        timer.stop();
-        state = GameState::PAUSED;
+        if (state == GameState::PLAYING) {
+            timer.stop();
+            state = GameState::PAUSED;
+        }
     }
 
     void resume() {
-        timer.resume();
-        state = GameState::PLAYING;
+        if (state == GameState::PAUSED) {
+            timer.resume();
+            state = GameState::PLAYING;
+        }
     }
 
     void over() {
-        timer.stop();
-        state = GameState::GAME_OVER;
+        if (state == GameState::PLAYING) {
+            timer.stop();
+            state = GameState::GAME_OVER;
+        }
     }
 
     void reset() {

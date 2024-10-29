@@ -7,7 +7,7 @@
 
 #include <SDL3/SDL.h>
 #include "Renderer.hpp"
-#include "../Mediator.hpp"
+#include "../../view/mediators/CoordinatesMediator.hpp"
 #include "../../model/entities/Player.hpp"
 #include "../../model/worlds/World.hpp"
 
@@ -37,7 +37,7 @@ public:
                 (float) player->getRect().w,
                 (float) player->getRect().h
         };
-        Mediator::SDL_ConvertCoordinatesForRendering(playerRect, World::getScreenSize()->h);
+        CoordinatesMediator::SDL_ConvertCoordinatesForRendering(playerRect, World::getScreenSize()->h);
 
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderFillRect(renderer, &playerRect);

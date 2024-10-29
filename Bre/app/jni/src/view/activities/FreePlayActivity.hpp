@@ -14,7 +14,7 @@
 #include "../../view/renderers/PlayerRenderer.hpp"
 #include "../../view/renderers/JoystickRenderer.hpp"
 #include "../../view/renderers/ClonesRenderer.hpp"
-#include "../Mediator.hpp"
+#include "../../view/mediators/InputMediator.hpp"
 
 class FreePlayActivity {
 
@@ -33,6 +33,9 @@ class FreePlayActivity {
     PlayerRenderer playerRenderer;
     JoystickRenderer joystickRenderer;
     ClonesRenderer clonesRenderer;
+
+    // Mediators
+    InputMediator inputMediator;
 
 
 public:
@@ -63,22 +66,24 @@ public:
             if(SDL_PollEvent(&e)) {
                 SDL_Log("Event type: %d", e.type);
 
-                TouchInput* touchInput = Mediator::SDL_GetTouchInput(e, screen->w, screen->h);
+                TouchInput* touchInput = inputMediator.SDL_GetTouchInput(e, screen->w, screen->h);
 
-                //Handle render
-                switch(touchInput->type) {
-                    case TouchInputType::SCREEN_TOUCH:
-                        if(touchInput->fingerID==1)
+                //Handle rendering for first finger
+                if(touchInput->fingerID==1) {
+                    switch (touchInput->type) {
+                        case TouchInputType::SCREEN_TOUCH:
                             joystickRenderer.buildCenter(touchInput->x, touchInput->y);
-                        break;
-                    case TouchInputType::SCREEN_SCROLL:
-                        if(touchInput->fingerID==1)
+                            break;
+                        case TouchInputType::SCREEN_SCROLL:
                             joystickRenderer.buildEntireArrow(touchInput->x, touchInput->y);
-                        break;
-                    case TouchInputType::SCREEN_RELEASE:
-                        if(touchInput->fingerID==1)
+                            break;
+                        case TouchInputType::SCREEN_RELEASE:
                             joystickRenderer.stop();
-                        break;
+                            break;
+                        case TouchInputType::SCREEN_TAP:
+                            joystickRenderer.stop();
+                            break;
+                    }
                 }
 
                 //Handle logic

@@ -12,6 +12,8 @@
 
 class MovementSystem {
     StopWatch frameTimer{TimeUnit::MICROSECONDS};
+    float cos = 0;
+    float sin = 0;
 
 public:
     MovementSystem() = default;
@@ -22,8 +24,11 @@ public:
             float y0 = player->getRect().y;
             float v = player->getSpeed();
             double dt = frameTimer.now()/1000000.0;
-            float cos = joystick->getDirection().x;
-            float sin = joystick->getDirection().y;
+
+            if(joystick->getVector() != nullptr) {
+                cos = joystick->getDirection().x;
+                sin = joystick->getDirection().y;
+            }
 
             player->setPosition(x0 + v * cos * dt, y0 + v * sin * dt);
         }

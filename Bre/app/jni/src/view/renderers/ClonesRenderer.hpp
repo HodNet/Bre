@@ -8,7 +8,7 @@
 #include <SDL3/SDL.h>
 
 #include "Renderer.hpp"
-#include "../Mediator.hpp"
+#include "../../view/mediators/CoordinatesMediator.hpp"
 #include "../../model/entities/Clone.hpp"
 #include "../../model/worlds/FreePlayWorld.hpp"
 
@@ -23,15 +23,16 @@ private:
 
 public:
     ClonesRenderer() = default;
-    ClonesRenderer(SDL_Renderer* renderer) {
-        this->renderer = renderer;
-    }
+    ClonesRenderer(SDL_Renderer* renderer) : renderer(renderer) {}
 
     void render() override {
         if(stopRendering)
             return;
 
         this->clones = FreePlayWorld::getClones();
+        if(clones == nullptr)
+            return;
+
         for(auto& clone_pair : *clones) {
             Clone& clone = clone_pair.second;
 
@@ -41,7 +42,7 @@ public:
                     (float) clone.getRect().w,
                     (float) clone.getRect().h
             };
-            Mediator::SDL_ConvertCoordinatesForRendering(cloneRect, World::getScreenSize()->h);
+            CoordinatesMediator::SDL_ConvertCoordinatesForRendering(cloneRect, World::getScreenSize()->h);
 
             SDL_SetRenderDrawColor(renderer, 204, 2, 2, 255);
             SDL_RenderFillRect(renderer, &cloneRect);

@@ -12,8 +12,8 @@
 struct TouchInput {
     TouchInputType type = TouchInputType::NONE;
     unsigned short int fingerID;
-    int x;
-    int y;
+    float x;
+    float y;
 
     TouchInput() = default;
 };

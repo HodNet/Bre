@@ -7,8 +7,8 @@
 
 enum class TouchInputType {
     SCREEN_TOUCH,
-    SCREEN_SCROLL,
     SCREEN_RELEASE,
+    SCREEN_SCROLL,
     SCREEN_TAP,
     NONE
 };

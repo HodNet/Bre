@@ -9,7 +9,7 @@
 #include <SDL3_image/SDL_image.h>
 
 #include "Renderer.hpp"
-#include "../Mediator.hpp"
+#include "../../view/mediators/CoordinatesMediator.hpp"
 #include "../../controller/components/Rectangle.hpp"
 #include "../../model/entities/Arrow.hpp"
 #include "../../model/worlds/World.hpp"
@@ -64,7 +64,7 @@ public:
             DSTcenter.x = joystick->getCenter()->x;
             DSTcenter.y = joystick->getCenter()->y;
 
-            Mediator::SDL_ConvertCoordinatesForRendering(DSTcenter, World::getScreenSize()->h);
+            CoordinatesMediator::SDL_ConvertCoordinatesForRendering(DSTcenter, World::getScreenSize()->h);
         }
     }
 
@@ -80,7 +80,7 @@ public:
         if(joystick->getCenter() != nullptr) {
             joystick->setVector(input_x, input_y);
             angle = joystick->getVector()->getAngleInDegrees();
-            Mediator::SDL_ConvertAngleForRendering(angle);
+            CoordinatesMediator::SDL_ConvertAngleForRendering(angle);
 
             DSTbody.w = joystick->getVector()->getMagnitude();
             DSTbody.w += DSTbody.w/100; // adding a bit more length to make it connect with the tip
@@ -90,8 +90,8 @@ public:
             DSTtip.x = joystick->getTip().x;
             DSTtip.y = joystick->getTip().y;
 
-            Mediator::SDL_ConvertCoordinatesForRendering(DSTbody, World::getScreenSize()->h);
-            Mediator::SDL_ConvertCoordinatesForRendering(DSTtip, World::getScreenSize()->h);
+            CoordinatesMediator::SDL_ConvertCoordinatesForRendering(DSTbody, World::getScreenSize()->h);
+            CoordinatesMediator::SDL_ConvertCoordinatesForRendering(DSTtip, World::getScreenSize()->h);
         }
     }
 
