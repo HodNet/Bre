@@ -9,6 +9,7 @@
  * Singleton class representing the main player. There can only be one instance of the player at a time.
  */
 class Player {
+    const Point2D initialPosition;
     Rectangle rect;
     const float speed = 500.0f; // pixels per second
     PlayerState state;
@@ -20,6 +21,9 @@ class Player {
                 screen_h/2 - screen_w/20/2,
                 screen_w/20,
                 screen_w/20
+        ), initialPosition(
+                screen_w/2 - screen_w/20/2,
+                screen_h/2 - screen_w/20/2
         ) {
         state = PlayerState::IDLE;
     }
@@ -51,6 +55,11 @@ public:
     void setPosition(float x, float y) {
         rect.setX(x);
         rect.setY(y);
+    }
+
+    void reset() {
+        setPosition(initialPosition.x, initialPosition.y);
+        setState(PlayerState::IDLE);
     }
 
     ~Player() {

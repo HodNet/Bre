@@ -48,5 +48,6 @@ endif()
 add_library(main SHARED
         YourSourceHere.c
         Main.cpp
+        controller/systems/InGameEventSystem.cpp # This cpp is necessary to avoid cyclic dependencies
 )
 target_link_libraries(main PRIVATE SDL3::SDL3 SDL3_image::SDL3_image c++_shared atomic)

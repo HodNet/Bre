@@ -9,7 +9,6 @@
 
 #include "../../model/entities/TouchInput.hpp"
 #include "../../model/worlds/FreePlayWorld.hpp"
-#include "../../controller/systems/InGameInputSystem.hpp"
 #include "../../view/renderers/LevelBackgroundRenderer.hpp"
 #include "../../view/renderers/PlayerRenderer.hpp"
 #include "../../view/renderers/JoystickRenderer.hpp"
@@ -21,8 +20,6 @@ class FreePlayActivity {
     bool playing = false;
     bool developer_mode = false;
     FreePlayWorld freePlayWorld;
-
-    InGameInputSystem inGameInputSystem;
 
     const SDL_DisplayMode* screen;
     SDL_Window* freePlayWindow = nullptr;
@@ -66,6 +63,11 @@ public:
             if(SDL_PollEvent(&e)) {
                 SDL_Log("Event type: %d", e.type);
 
+                if(e.type == SDL_EVENT_QUIT) {
+                    playing = false;
+                    break;
+                }
+
                 TouchInput* touchInput = inputMediator.SDL_GetTouchInput(e, screen->w, screen->h);
 
                 //Handle rendering for first finger
@@ -87,10 +89,7 @@ public:
                 }
 
                 //Handle logic
-                inGameInputSystem.handleInput(touchInput);
-
-                if(e.type == SDL_EVENT_QUIT)
-                    playing = false;
+                freePlayWorld.handleInput(touchInput);
             }
 
             freePlayWorld.update();

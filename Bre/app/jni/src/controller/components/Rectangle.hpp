@@ -37,6 +37,10 @@ struct Rectangle {
         return x >= Xmin() && x <= Xmax() && y >= Ymin() && y <= Ymax();
     }
 
+    bool contains(const Rectangle& r) const {
+        return Xmin() <= r.Xmin() && Xmax() >= r.Xmax() && Ymin() <= r.Ymin() && Ymax() >= r.Ymax();
+    }
+
     bool intersects(const Rectangle& r) const {
         return Xmin() < r.Xmax() && Xmax() > r.Xmin() && Ymin() < r.Ymax() && Ymax() > r.Ymin();
     }

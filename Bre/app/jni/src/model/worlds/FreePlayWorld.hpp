@@ -7,14 +7,10 @@
 
 #include <map>
 
-#include "World.hpp"
-#include "../../model/entities/Player.hpp"
-#include "../../model/entities/Arrow.hpp"
-#include "../../controller/components/StopWatch.hpp"
-#include "../../controller/systems/MovementSystem.hpp"
+#include "GameWorld.hpp"
 #include "../../controller/systems/ClonesSystem.hpp"
 
-class FreePlayWorld : virtual public World {
+class FreePlayWorld : public GameWorld {
 
 private:
     bool alreadyEntered = false;
@@ -28,26 +24,33 @@ private:
 public:
     void enter(unsigned int screen_w, unsigned int screen_h) override {
         if(!alreadyEntered) {
-            setScreenSize(screen_w, screen_h);
-            game = new Game();
-            player = Player::getInstance(screen_w, screen_h);
+            GameWorld::enter(screen_w, screen_h);
             clones = new std::map<int, Clone>();
             alreadyEntered = true;
         }
     }
 
     void update() override {
-        movementSystem.movePlayer(player, joystick);
+        GameWorld::update();
         clonesSystem.updatePlayerPath(player, game);
         clonesSystem.addCloneEveryTwoSeconds(clones, game, screenSize);
         clonesSystem.moveAllClones(clones);
+        CollisionSystem::updatePlayerCloneCollisions(player, clones, game);
+
+        if(game->getState() == GameState::GAME_OVER) {
+            reset();
+        }
+    }
+
+    void reset() override {
+        GameWorld::reset();
+        clones->clear();
+        clonesSystem.reset();
     }
 
     void exit() override {
-        delete screenSize; screenSize = nullptr;
-        delete player; player = nullptr;
-        delete game; game = nullptr;
-        delete joystick; joystick = nullptr;
+        GameWorld::exit();
+        clones->clear();
         delete clones; clones = nullptr;
     }
 

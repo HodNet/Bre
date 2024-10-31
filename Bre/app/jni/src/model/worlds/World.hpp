@@ -8,11 +8,7 @@
 #include <vector>
 
 #include "../../controller/components/Rectangle.hpp"
-#include "../../controller/components/StopWatch.hpp"
-#include "../../controller/systems/MovementSystem.hpp"
-#include "../../model/entities/Game.hpp"
-#include "../../model/entities/Player.hpp"
-#include "../../model/entities/Arrow.hpp"
+#include "../../model/entities/TouchInput.hpp"
 
 /**
  * This classes are static containers of all the entities in the world of a game.
@@ -26,21 +22,22 @@
 class World{
 
 protected:
-    //Entities contained in all Worlds
     static const Rectangle* screenSize;
-    static Game* game;
-    static Player* player;
-    static Arrow* joystick;
-
-    //Systems used in all Worlds
-    MovementSystem movementSystem;
 
 public:
     /**
      * Should be called when the player just entered the world.
      * This function should set the screen size and initialize all the entities in the world.
      */
-    virtual void enter(unsigned int screen_w, unsigned int screen_h) = 0;
+    virtual void enter(unsigned int screen_w, unsigned int screen_h) {
+        setScreenSize(screen_w, screen_h);
+    }
+
+    /**
+     * Should be called when the player is in the world and has touched the screen.
+     * This function should handle the input of the player.
+     */
+    virtual void handleInput(TouchInput* touchInput) = 0;
 
     /**
      * Should be called every frame.
@@ -60,27 +57,6 @@ public:
 
     static const Rectangle* getScreenSize() {
         return screenSize;
-    }
-
-    static Player* getPlayer() {
-        return player;
-    }
-
-    static Game* getGame() {
-        return game;
-    }
-
-    static Arrow* getJoystick() {
-        return joystick;
-    }
-
-    static void setJoystick(Arrow* new_joystick) {
-        joystick = new_joystick;
-    }
-
-    static void destroyJoystick() {
-        delete joystick;
-        joystick = nullptr;
     }
 };
 

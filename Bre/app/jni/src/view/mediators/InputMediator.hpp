@@ -11,6 +11,7 @@
 class InputMediator {
     SDL_Event previousEvent_1; // previous input from finger with ID 1
     SDL_Event previousPreviousEvent_1; // previous input from previous input from finger with ID 1
+    SDL_Event previousPreviousPreviousEvent_1; // previous input from previous input from previous input from finger with ID 1
 
 public:
     InputMediator() = default;
@@ -22,11 +23,17 @@ public:
         if (sdl_event.tfinger.fingerID == 1) {
 
             // Defining a tap event
-            if (previousPreviousEvent_1.type == SDL_EVENT_FINGER_DOWN &&
+            if ((previousPreviousEvent_1.type == SDL_EVENT_FINGER_DOWN &&
                 previousEvent_1.type == SDL_EVENT_FINGER_MOTION &&
-                sdl_event.type == SDL_EVENT_FINGER_UP) {
-                touchInput->type = TouchInputType::SCREEN_TAP;
-                goto finish_the_input;
+                sdl_event.type == SDL_EVENT_FINGER_UP)
+                ||
+                (previousPreviousPreviousEvent_1.type == SDL_EVENT_FINGER_DOWN &&
+                previousPreviousEvent_1.type == SDL_EVENT_FINGER_MOTION &&
+                previousEvent_1.type == SDL_EVENT_FINGER_MOTION &&
+                sdl_event.type == SDL_EVENT_FINGER_UP)
+                ) {
+                    touchInput->type = TouchInputType::SCREEN_TAP;
+                    goto finish_the_input;
             }
 
             // Defining a scroll event
@@ -59,6 +66,7 @@ public:
             touchInput->x = x;
             touchInput->y = y;
 
+            previousPreviousPreviousEvent_1 = previousPreviousEvent_1;
             previousPreviousEvent_1 = previousEvent_1;
             previousEvent_1 = sdl_event;
         }

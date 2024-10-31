@@ -9,7 +9,7 @@
 #include "Renderer.hpp"
 #include "../../view/mediators/CoordinatesMediator.hpp"
 #include "../../model/entities/Player.hpp"
-#include "../../model/worlds/World.hpp"
+#include "../../model/worlds/GameWorld.hpp"
 
 
 class PlayerRenderer : public Renderer {
@@ -30,14 +30,14 @@ public:
         if(stopRendering)
             return;
 
-        this->player = World::getPlayer();
+        this->player = GameWorld::getPlayer();
         this->playerRect = {
                 (float) player->getRect().x,
                 (float) player->getRect().y,
                 (float) player->getRect().w,
                 (float) player->getRect().h
         };
-        CoordinatesMediator::SDL_ConvertCoordinatesForRendering(playerRect, World::getScreenSize()->h);
+        CoordinatesMediator::SDL_ConvertCoordinatesForRendering(playerRect, GameWorld::getScreenSize()->h);
 
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderFillRect(renderer, &playerRect);

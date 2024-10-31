@@ -12,9 +12,9 @@ Player* Player::instance = nullptr;
 
 // Static objects declarations
 const Rectangle* World::screenSize = nullptr;
-Game* World::game = nullptr;
-Player* World::player = nullptr;
-Arrow* World::joystick = nullptr;
+Game* GameWorld::game = nullptr;
+Player* GameWorld::player = nullptr;
+Arrow* GameWorld::joystick = nullptr;
 std::map<int, Clone>* FreePlayWorld::clones = nullptr;
 
 class Main {

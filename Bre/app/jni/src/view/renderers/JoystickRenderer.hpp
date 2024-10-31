@@ -12,7 +12,7 @@
 #include "../../view/mediators/CoordinatesMediator.hpp"
 #include "../../controller/components/Rectangle.hpp"
 #include "../../model/entities/Arrow.hpp"
-#include "../../model/worlds/World.hpp"
+#include "../../model/worlds/GameWorld.hpp"
 
 
 class JoystickRenderer : public Renderer {
@@ -51,7 +51,7 @@ public:
      */
     void buildCenter(int input_x, int input_y) {
         if(stopRendering) {
-            World::destroyJoystick();
+            GameWorld::destroyJoystick();
             joystick = nullptr;
             resume();
         }
@@ -59,12 +59,12 @@ public:
         if(joystick == nullptr) {
             joystick = new Arrow();
             joystick->setCenter(input_x, input_y);
-            World::setJoystick(joystick);
+            GameWorld::setJoystick(joystick);
 
             DSTcenter.x = joystick->getCenter()->x;
             DSTcenter.y = joystick->getCenter()->y;
 
-            CoordinatesMediator::SDL_ConvertCoordinatesForRendering(DSTcenter, World::getScreenSize()->h);
+            CoordinatesMediator::SDL_ConvertCoordinatesForRendering(DSTcenter, GameWorld::getScreenSize()->h);
         }
     }
 
@@ -90,8 +90,8 @@ public:
             DSTtip.x = joystick->getTip().x;
             DSTtip.y = joystick->getTip().y;
 
-            CoordinatesMediator::SDL_ConvertCoordinatesForRendering(DSTbody, World::getScreenSize()->h);
-            CoordinatesMediator::SDL_ConvertCoordinatesForRendering(DSTtip, World::getScreenSize()->h);
+            CoordinatesMediator::SDL_ConvertCoordinatesForRendering(DSTbody, GameWorld::getScreenSize()->h);
+            CoordinatesMediator::SDL_ConvertCoordinatesForRendering(DSTtip, GameWorld::getScreenSize()->h);
         }
     }
 

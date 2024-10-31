@@ -42,7 +42,7 @@ public:
                     (float) clone.getRect().w,
                     (float) clone.getRect().h
             };
-            CoordinatesMediator::SDL_ConvertCoordinatesForRendering(cloneRect, World::getScreenSize()->h);
+            CoordinatesMediator::SDL_ConvertCoordinatesForRendering(cloneRect, FreePlayWorld::getScreenSize()->h);
 
             SDL_SetRenderDrawColor(renderer, 204, 2, 2, 255);
             SDL_RenderFillRect(renderer, &cloneRect);

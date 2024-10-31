@@ -7,7 +7,8 @@ LOCAL_MODULE := main
 # Add your application source files here...
 LOCAL_SRC_FILES := \
     YourSourceHere.c \
-    Main.cpp
+    Main.cpp \
+    controller/systems/InGameEventSystem.cpp # This cpp is necessary to avoid cyclic dependencies
 
 SDL_PATH := ../SDL  # SDL
 SDL_IMAGE_PATH := ../SDL_image  # SDL_image

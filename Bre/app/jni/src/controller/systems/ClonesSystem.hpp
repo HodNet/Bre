@@ -20,7 +20,7 @@ private:
     bool isCloneAddable = true;
     bool isMaxNumberOfClonesReached = false;
     int nextCloneKey = 1;
-    int framesBetweenEveryClone = 500;
+    int framesBetweenEveryClone;
     constexpr const static short int seconds_between_every_clone = 2;
 
 public:
@@ -41,7 +41,6 @@ public:
         if(time_in_seconds!=0) {
             //add clone every 2 seconds
             if (time_in_seconds % seconds_between_every_clone == 0 && isCloneAddable) {
-                SDL_Log("time_in_seconds: %d", time_in_seconds);
                 if (nextCloneKey == 1) {
                     framesBetweenEveryClone = path.size();
                 }
@@ -57,7 +56,6 @@ public:
     void moveAllClones(std::map<int, Clone>* clones) {
         //move all clones
         for(auto& clone_pair : *clones) {
-            SDL_Log("clone_key: %d", clone_pair.first);
             const int clone_key = clone_pair.first;
             Clone& clone = clone_pair.second;
 
@@ -67,6 +65,13 @@ public:
                 clone.setPosition(x, y);
             }
         }
+    }
+
+    void reset() {
+        path.clear();
+        nextCloneKey = 1;
+        isCloneAddable = true;
+        isMaxNumberOfClonesReached = false;
     }
 };
 
