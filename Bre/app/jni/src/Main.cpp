@@ -16,6 +16,7 @@ Game* GameWorld::game = nullptr;
 Player* GameWorld::player = nullptr;
 Arrow* GameWorld::joystick = nullptr;
 std::map<int, Clone>* FreePlayWorld::clones = nullptr;
+Score* FreePlayWorld::score = nullptr;
 
 class Main {
 
