@@ -11,6 +11,9 @@
 
 #include "../../model/entities/Player.hpp"
 #include "../../model/entities/Clone.hpp"
+#include "../../model/entities/Game.hpp"
+#include "../../model/states/GameState.hpp"
+#include "../../model/entities/Score.hpp"
 #include "../../controller/components/Point2D.hpp"
 
 class ClonesSystem {
@@ -35,7 +38,7 @@ public:
         }
     }
 
-    void addCloneEveryTwoSeconds(std::map<int, Clone>* clones, const Game* game, const Rectangle* screenSize) {
+    void addCloneEveryTwoSeconds(std::map<int, Clone>* clones, const Game* game, const Rectangle* screenSize, Score* score) {
         short int time_in_seconds = game->getTimer().now()/1000;
 
         if(time_in_seconds!=0) {
@@ -46,6 +49,7 @@ public:
                 }
                 clones->insert(std::pair<int, Clone>(nextCloneKey++,
                                                         Clone(screenSize->w, screenSize->h)));
+                score->incrementScore();
                 isCloneAddable = false;
             } else if (time_in_seconds % seconds_between_every_clone == 1 && !isMaxNumberOfClonesReached) {
                 isCloneAddable = true;

@@ -55,6 +55,7 @@ public:
         delete game; game = nullptr;
         delete player; player = nullptr;
         delete joystick; joystick = nullptr;
+        inGameInputSystem.reset();
     }
 
     static Player* getPlayer() {

@@ -9,6 +9,8 @@
 
 #include "GameWorld.hpp"
 #include "../../controller/systems/ClonesSystem.hpp"
+#include "../../model/entities/Clone.hpp"
+#include "../../model/entities/Score.hpp"
 
 class FreePlayWorld : public GameWorld {
 
@@ -17,6 +19,7 @@ private:
 
     //Entities
     static std::map<int, Clone>* clones;
+    static Score* score;
 
     //Systems
     ClonesSystem clonesSystem;
@@ -26,6 +29,7 @@ public:
         if(!alreadyEntered) {
             GameWorld::enter(screen_w, screen_h);
             clones = new std::map<int, Clone>();
+            score = new Score();
             alreadyEntered = true;
         }
     }
@@ -33,7 +37,7 @@ public:
     void update() override {
         GameWorld::update();
         clonesSystem.updatePlayerPath(player, game);
-        clonesSystem.addCloneEveryTwoSeconds(clones, game, screenSize);
+        clonesSystem.addCloneEveryTwoSeconds(clones, game, screenSize, score);
         clonesSystem.moveAllClones(clones);
         CollisionSystem::updatePlayerCloneCollisions(player, clones, game);
 
@@ -45,17 +49,24 @@ public:
     void reset() override {
         GameWorld::reset();
         clones->clear();
+        score->resetForGameOver();
         clonesSystem.reset();
     }
 
     void exit() override {
         GameWorld::exit();
         clones->clear();
+        delete score; score = nullptr;
         delete clones; clones = nullptr;
+        clonesSystem.reset();
     }
 
     static std::map<int, Clone>* getClones() {
         return clones;
+    }
+
+    static Score* getScore() {
+        return score;
     }
 };
 
