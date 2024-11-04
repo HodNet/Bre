@@ -487,13 +487,9 @@ static void device_event(SDL_UDEV_deviceevent type, struct udev_device *dev)
         return;
     }
 
-    if (type == SDL_UDEV_DEVICEADDED) {
-        devclass = device_class(dev);
-        if (!devclass) {
-            return;
-        }
-    } else {
-        // The device has been removed, the class isn't available
+    devclass = device_class(dev);
+    if (!devclass) {
+         return;
     }
 
     // Process callbacks

@@ -78,34 +78,12 @@ extern "C" {
  *            any.
  * \returns false.
  *
- * \threadsafety It is safe to call this function from any thread.
- *
- * \since This function is available since SDL 3.1.3.
+ * \since This function is available since SDL 3.0.0.
  *
  * \sa SDL_ClearError
  * \sa SDL_GetError
- * \sa SDL_SetErrorV
  */
 extern SDL_DECLSPEC bool SDLCALL SDL_SetError(SDL_PRINTF_FORMAT_STRING const char *fmt, ...) SDL_PRINTF_VARARG_FUNC(1);
-
-/**
- * Set the SDL error message for the current thread.
- *
- * Calling this function will replace any previous error message that was set.
- *
- * \param fmt a printf()-style message format string.
- * \param ap a variable argument list.
- * \returns false.
- *
- * \threadsafety It is safe to call this function from any thread.
- *
- * \since This function is available since SDL 3.1.3.
- *
- * \sa SDL_ClearError
- * \sa SDL_GetError
- * \sa SDL_SetError
- */
-extern SDL_DECLSPEC bool SDLCALL SDL_SetErrorV(SDL_PRINTF_FORMAT_STRING const char *fmt, va_list ap) SDL_PRINTF_VARARG_FUNCV(1);
 
 /**
  * Set an error indicating that memory allocation failed.
@@ -114,9 +92,7 @@ extern SDL_DECLSPEC bool SDLCALL SDL_SetErrorV(SDL_PRINTF_FORMAT_STRING const ch
  *
  * \returns false.
  *
- * \threadsafety It is safe to call this function from any thread.
- *
- * \since This function is available since SDL 3.1.3.
+ * \since This function is available since SDL 3.0.0.
  */
 extern SDL_DECLSPEC bool SDLCALL SDL_OutOfMemory(void);
 
@@ -148,9 +124,7 @@ extern SDL_DECLSPEC bool SDLCALL SDL_OutOfMemory(void);
  *          or an empty string if there hasn't been an error message set since
  *          the last call to SDL_ClearError().
  *
- * \threadsafety It is safe to call this function from any thread.
- *
- * \since This function is available since SDL 3.1.3.
+ * \since This function is available since SDL 3.0.0.
  *
  * \sa SDL_ClearError
  * \sa SDL_SetError
@@ -162,9 +136,7 @@ extern SDL_DECLSPEC const char * SDLCALL SDL_GetError(void);
  *
  * \returns true.
  *
- * \threadsafety It is safe to call this function from any thread.
- *
- * \since This function is available since SDL 3.1.3.
+ * \since This function is available since SDL 3.0.0.
  *
  * \sa SDL_GetError
  * \sa SDL_SetError

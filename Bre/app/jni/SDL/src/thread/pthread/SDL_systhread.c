@@ -26,9 +26,7 @@
 #include <pthread_np.h>
 #endif
 
-#ifdef HAVE_SIGNAL_H
 #include <signal.h>
-#endif
 #include <errno.h>
 
 #ifdef SDL_PLATFORM_LINUX
@@ -57,13 +55,11 @@
 #include <kernel/OS.h>
 #endif
 
-#ifdef HAVE_SIGNAL_H
 // List of signals to mask in the subthreads
 static const int sig_list[] = {
     SIGHUP, SIGINT, SIGQUIT, SIGPIPE, SIGALRM, SIGTERM, SIGCHLD, SIGWINCH,
     SIGVTALRM, SIGPROF, 0
 };
-#endif
 
 static void *RunThread(void *data)
 {
@@ -121,10 +117,8 @@ bool SDL_SYS_CreateThread(SDL_Thread *thread,
 
 void SDL_SYS_SetupThread(const char *name)
 {
-#ifdef HAVE_SIGNAL_H
     int i;
     sigset_t mask;
-#endif
 
     if (name) {
 #if (defined(SDL_PLATFORM_MACOS) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_LINUX)) && defined(HAVE_DLOPEN)
@@ -160,14 +154,12 @@ void SDL_SYS_SetupThread(const char *name)
 #endif
     }
 
-#ifdef HAVE_SIGNAL_H
     // Mask asynchronous signals for this thread
     sigemptyset(&mask);
     for (i = 0; sig_list[i]; ++i) {
         sigaddset(&mask, sig_list[i]);
     }
     pthread_sigmask(SIG_BLOCK, &mask, 0);
-#endif
 
 #ifdef PTHREAD_CANCEL_ASYNCHRONOUS
     // Allow ourselves to be asynchronously cancelled

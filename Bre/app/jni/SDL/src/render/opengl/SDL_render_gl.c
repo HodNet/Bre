@@ -1497,7 +1497,20 @@ static SDL_Surface *GL_RenderReadPixels(SDL_Renderer *renderer, const SDL_Rect *
 
     // Flip the rows to be top-down if necessary
     if (!renderer->target) {
-        SDL_FlipSurface(surface, SDL_FLIP_VERTICAL);
+        bool isstack;
+        int length = rect->w * SDL_BYTESPERPIXEL(format);
+        Uint8 *src = (Uint8 *)surface->pixels + (rect->h - 1) * surface->pitch;
+        Uint8 *dst = (Uint8 *)surface->pixels;
+        Uint8 *tmp = SDL_small_alloc(Uint8, length, &isstack);
+        int rows = rect->h / 2;
+        while (rows--) {
+            SDL_memcpy(tmp, dst, length);
+            SDL_memcpy(dst, src, length);
+            SDL_memcpy(src, tmp, length);
+            dst += surface->pitch;
+            src -= surface->pitch;
+        }
+        SDL_small_free(tmp, isstack);
     }
     return surface;
 }

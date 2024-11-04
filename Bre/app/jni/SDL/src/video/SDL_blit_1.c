@@ -48,7 +48,7 @@ static void Blit1to1(SDL_BlitInfo *info)
     while (height--) {
 #ifdef USE_DUFFS_LOOP
         /* *INDENT-OFF* */ // clang-format off
-        DUFFS_LOOP_TRIVIAL(
+        DUFFS_LOOP(
             {
               *dst = map[*src];
             }
@@ -100,7 +100,7 @@ static void Blit1to2(SDL_BlitInfo *info)
 #ifdef USE_DUFFS_LOOP
     while (height--) {
         /* *INDENT-OFF* */ // clang-format off
-        DUFFS_LOOP_TRIVIAL(
+        DUFFS_LOOP(
         {
             *(Uint16 *)dst = map[*src++];
             dst += 2;
@@ -256,7 +256,7 @@ static void Blit1to4(SDL_BlitInfo *info)
     while (height--) {
 #ifdef USE_DUFFS_LOOP
         /* *INDENT-OFF* */ // clang-format off
-        DUFFS_LOOP_TRIVIAL(
+        DUFFS_LOOP(
             *dst++ = map[*src++];
         , width);
         /* *INDENT-ON* */ // clang-format on
@@ -297,7 +297,7 @@ static void Blit1to1Key(SDL_BlitInfo *info)
     if (palmap) {
         while (height--) {
             /* *INDENT-OFF* */ // clang-format off
-            DUFFS_LOOP_TRIVIAL(
+            DUFFS_LOOP(
             {
                 if ( *src != ckey ) {
                   *dst = palmap[*src];
@@ -313,7 +313,7 @@ static void Blit1to1Key(SDL_BlitInfo *info)
     } else {
         while (height--) {
             /* *INDENT-OFF* */ // clang-format off
-            DUFFS_LOOP_TRIVIAL(
+            DUFFS_LOOP(
             {
                 if ( *src != ckey ) {
                   *dst = *src;
@@ -345,7 +345,7 @@ static void Blit1to2Key(SDL_BlitInfo *info)
 
     while (height--) {
         /* *INDENT-OFF* */ // clang-format off
-        DUFFS_LOOP_TRIVIAL(
+        DUFFS_LOOP(
         {
             if ( *src != ckey ) {
                 *dstp=palmap[*src];
@@ -408,7 +408,7 @@ static void Blit1to4Key(SDL_BlitInfo *info)
 
     while (height--) {
         /* *INDENT-OFF* */ // clang-format off
-        DUFFS_LOOP_TRIVIAL(
+        DUFFS_LOOP(
         {
             if ( *src != ckey ) {
                 *dstp = palmap[*src];
@@ -444,7 +444,7 @@ static void Blit1toNAlpha(SDL_BlitInfo *info)
 
     while (height--) {
         /* *INDENT-OFF* */ // clang-format off
-        DUFFS_LOOP(
+        DUFFS_LOOP4(
         {
             sR = srcpal[*src].r;
             sG = srcpal[*src].g;

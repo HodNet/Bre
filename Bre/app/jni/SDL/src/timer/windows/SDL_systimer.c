@@ -25,13 +25,13 @@
 #include "../../core/windows/SDL_windows.h"
 
 
-static void SDL_CleanupWaitableHandle(void *handle)
+#ifdef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+static void SDL_CleanupWaitableTimer(void *timer)
 {
-    CloseHandle(handle);
+    CloseHandle(timer);
 }
 
-#ifdef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
-static HANDLE SDL_GetWaitableTimer(void)
+HANDLE SDL_GetWaitableTimer(void)
 {
     static SDL_TLSID TLS_timer_handle;
     HANDLE timer;
@@ -40,27 +40,12 @@ static HANDLE SDL_GetWaitableTimer(void)
     if (!timer) {
         timer = CreateWaitableTimerExW(NULL, NULL, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
         if (timer) {
-            SDL_SetTLS(&TLS_timer_handle, timer, SDL_CleanupWaitableHandle);
+            SDL_SetTLS(&TLS_timer_handle, timer, SDL_CleanupWaitableTimer);
         }
     }
     return timer;
 }
 #endif // CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
-
-static HANDLE SDL_GetWaitableEvent(void)
-{
-    static SDL_TLSID TLS_event_handle;
-    HANDLE event;
-
-    event = SDL_GetTLS(&TLS_event_handle);
-    if (!event) {
-        event = CreateEvent(NULL, FALSE, FALSE, NULL);
-        if (event) {
-            SDL_SetTLS(&TLS_event_handle, event, SDL_CleanupWaitableHandle);
-        }
-    }
-    return event;
-}
 
 Uint64 SDL_GetPerformanceCounter(void)
 {
@@ -96,19 +81,22 @@ void SDL_SYS_DelayNS(Uint64 ns)
     }
 #endif
 
-    const Uint64 max_delay = 0xffffffffLL * SDL_NS_PER_MS;
-    if (ns > max_delay) {
-        ns = max_delay;
-    }
-    const DWORD delay = (DWORD)SDL_NS_TO_MS(ns);
+    {
+        const Uint64 max_delay = 0xffffffffLL * SDL_NS_PER_MS;
+        if (ns > max_delay) {
+            ns = max_delay;
+        }
 
-    HANDLE event = SDL_GetWaitableEvent();
-    if (event) {
-        WaitForSingleObjectEx(event, delay, FALSE);
-        return;
+#if defined(_MSC_FULL_VER) && (_MSC_FULL_VER <= 180030723)
+        static HANDLE mutex = 0;
+        if (!mutex) {
+            mutex = CreateEventEx(0, 0, 0, EVENT_ALL_ACCESS);
+        }
+        WaitForSingleObjectEx(mutex, (DWORD)SDL_NS_TO_MS(ns), FALSE);
+#else
+        Sleep((DWORD)SDL_NS_TO_MS(ns));
+#endif
     }
-
-    Sleep(delay);
 }
 
 #endif // SDL_TIMER_WINDOWS

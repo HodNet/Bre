@@ -27,111 +27,65 @@ static int active_channel;
 #define LFE_SINE_FREQ_HZ 50
 
 /* The channel layout is defined in SDL_audio.h */
-static const char *get_channel_name(int channel_index, int channel_count)
+static const char *
+get_channel_name(int channel_index, int channel_count)
 {
-    switch (channel_count) {
+    switch (channel_index) {
+    case 0:
+        return "Front Left";
     case 1:
-        return "Mono";
+        return "Front Right";
     case 2:
-        switch (channel_index) {
-        case 0:
-            return "Front Left";
-        case 1:
-            return "Front Right";
+        switch (channel_count) {
+        case 3:
+        case 5:
+            return "Low Frequency Effects";
+        case 4:
+            return "Back Left";
+        default:
+            return "Front Center";
         }
-        break;
     case 3:
-        switch (channel_index) {
-        case 0:
-            return "Front Left";
-        case 1:
-            return "Front Right";
-        case 2:
+        switch (channel_count) {
+        case 4:
+            return "Back Right";
+        case 5:
+            return "Back Left";
+        default:
             return "Low Frequency Effects";
         }
-        break;
     case 4:
-        switch (channel_index) {
-        case 0:
-            return "Front Left";
-        case 1:
-            return "Front Right";
-        case 2:
-            return "Back Left";
-        case 3:
-            return "Back Right";
-        }
-        break;
-    case 5:
-        switch (channel_index) {
-        case 0:
-            return "Front Left";
-        case 1:
-            return "Front Right";
-        case 2:
-            return "Low Frequency Effects";
-        case 3:
-            return "Back Left";
-        case 4:
-            return "Back Right";
-        }
-        break;
-    case 6:
-        switch (channel_index) {
-        case 0:
-            return "Front Left";
-        case 1:
-            return "Front Right";
-        case 2:
-            return "Front Center";
-        case 3:
-            return "Low Frequency Effects";
-        case 4:
-            return "Back Left";
-        case 5:
-            return "Back Right";
-        }
-        break;
-    case 7:
-        switch (channel_index) {
-        case 0:
-            return "Front Left";
-        case 1:
-            return "Front Right";
-        case 2:
-            return "Front Center";
-        case 3:
-            return "Low Frequency Effects";
-        case 4:
-            return "Back Center";
-        case 5:
-            return "Side Left";
-        case 6:
-            return "Side Right";
-        }
-        break;
-    case 8:
-        switch (channel_index) {
-        case 0:
-            return "Front Left";
-        case 1:
-            return "Front Right";
-        case 2:
-            return "Front Center";
-        case 3:
-            return "Low Frequency Effects";
-        case 4:
-            return "Back Left";
+        switch (channel_count) {
         case 5:
             return "Back Right";
         case 6:
             return "Side Left";
         case 7:
-            return "Side Right";
+            return "Back Center";
+        case 8:
+            return "Back Left";
         }
         break;
-    default:
+    case 5:
+        switch (channel_count) {
+        case 6:
+            return "Side Right";
+        case 7:
+            return "Side Left";
+        case 8:
+            return "Back Right";
+        }
         break;
+    case 6:
+        switch (channel_count) {
+        case 7:
+            return "Side Right";
+        case 8:
+            return "Side Left";
+        }
+        break;
+    case 7:
+        return "Side Right";
     }
     SDLTest_AssertCheck(false, "Invalid channel_index for channel_count:  channel_count=%d channel_index=%d", channel_count, channel_index);
     SDL_assert(0);

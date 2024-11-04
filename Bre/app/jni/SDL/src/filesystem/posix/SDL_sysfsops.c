@@ -40,7 +40,8 @@ bool SDL_SYS_EnumerateDirectory(const char *path, const char *dirname, SDL_Enume
 
     DIR *dir = opendir(path);
     if (!dir) {
-        return SDL_SetError("Can't open directory: %s", strerror(errno));
+        SDL_SetError("Can't open directory: %s", strerror(errno));
+        return -1;
     }
 
     struct dirent *ent;
@@ -74,7 +75,7 @@ bool SDL_SYS_RemovePath(const char *path)
 bool SDL_SYS_RenamePath(const char *oldpath, const char *newpath)
 {
     if (rename(oldpath, newpath) < 0) {
-        return SDL_SetError("Can't rename path: %s", strerror(errno));
+        return SDL_SetError("Can't remove path: %s", strerror(errno));
     }
     return true;
 }

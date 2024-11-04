@@ -67,15 +67,7 @@ ${src_main}
   return result;
 }")
 
-  if(CMAKE_C_COMPILER)
-    set(ext ".c")
-  elseif(CMAKE_CXX_COMPILER)
-    set(ext ".cpp")
-  else()
-    enable_language(C)
-    set(ext ".c")
-  endif()
-  set(path_src_arch_detect "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/CMakeTmp/SDL_detect_arch${ext}")
+  set(path_src_arch_detect "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/CMakeTmp/SDL_detect_arch.c")
   file(WRITE "${path_src_arch_detect}" "${src_arch_detect}")
   set(path_dir_arch_detect "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/CMakeTmp/SDL_detect_arch")
   set(path_bin_arch_detect "${path_dir_arch_detect}/bin")

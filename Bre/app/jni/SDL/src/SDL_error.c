@@ -26,28 +26,17 @@
 
 bool SDL_SetError(SDL_PRINTF_FORMAT_STRING const char *fmt, ...)
 {
-    va_list ap;
-    bool result;
-
-    va_start(ap, fmt);
-    result = SDL_SetErrorV(fmt, ap);
-    va_end(ap);
-    return result;
-}
-
-bool SDL_SetErrorV(SDL_PRINTF_FORMAT_STRING const char *fmt, va_list ap)
-{
     // Ignore call if invalid format pointer was passed
     if (fmt) {
+        va_list ap;
         int result;
         SDL_error *error = SDL_GetErrBuf(true);
-        va_list ap2;
 
         error->error = SDL_ErrorCodeGeneric;
 
-        va_copy(ap2, ap);
-        result = SDL_vsnprintf(error->str, error->len, fmt, ap2);
-        va_end(ap2);
+        va_start(ap, fmt);
+        result = SDL_vsnprintf(error->str, error->len, fmt, ap);
+        va_end(ap);
 
         if (result >= 0 && (size_t)result >= error->len && error->realloc_func) {
             size_t len = (size_t)result + 1;
@@ -55,9 +44,9 @@ bool SDL_SetErrorV(SDL_PRINTF_FORMAT_STRING const char *fmt, va_list ap)
             if (str) {
                 error->str = str;
                 error->len = len;
-                va_copy(ap2, ap);
-                (void)SDL_vsnprintf(error->str, error->len, fmt, ap2);
-                va_end(ap2);
+                va_start(ap, fmt);
+                (void)SDL_vsnprintf(error->str, error->len, fmt, ap);
+                va_end(ap);
             }
         }
 

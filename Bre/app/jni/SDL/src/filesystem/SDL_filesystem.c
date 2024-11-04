@@ -89,9 +89,6 @@ bool SDL_CreateDirectory(const char *path)
                 }
                 #else
                 const bool issep = (ch == '/');
-                if (issep && ((ptr - parents) == 0)) {
-                    continue; // it's just the root directory, skip it.
-                }
                 #endif
 
                 if (issep) {

@@ -59,9 +59,9 @@ XVisualInfo *X11_GLES_GetVisual(SDL_VideoDevice *_this, Display *display, int sc
 {
 
     XVisualInfo *egl_visualinfo = NULL;
-    EGLint visual_id = 0;
+    EGLint visual_id;
     XVisualInfo vi_in;
-    int out_count = 0;
+    int out_count;
 
     if (!_this->egl_data) {
         // The EGL library wasn't loaded, SDL_GetError() should have info
@@ -71,24 +71,8 @@ XVisualInfo *X11_GLES_GetVisual(SDL_VideoDevice *_this, Display *display, int sc
     if (_this->egl_data->eglGetConfigAttrib(_this->egl_data->egl_display,
                                             _this->egl_data->egl_config,
                                             EGL_NATIVE_VISUAL_ID,
-                                            &visual_id) == EGL_FALSE) {
-        visual_id = 0;
-    }
-    if (visual_id != 0) {
-        vi_in.screen = screen;
-        vi_in.visualid = visual_id;
-        egl_visualinfo = X11_XGetVisualInfo(display, VisualScreenMask | VisualIDMask, &vi_in, &out_count);
-        if (transparent && egl_visualinfo) {
-            Uint32 format = X11_GetPixelFormatFromVisualInfo(display, egl_visualinfo);
-            if (!SDL_ISPIXELFORMAT_ALPHA(format)) {
-                // not transparent!
-                X11_XFree(egl_visualinfo);
-                egl_visualinfo = NULL;
-            }
-        }
-    }
-    
-    if(!egl_visualinfo) {
+                                            &visual_id) == EGL_FALSE ||
+        !visual_id) {
         // Use the default visual when all else fails
         vi_in.screen = screen;
         egl_visualinfo = X11_XGetVisualInfo(display,
@@ -111,7 +95,12 @@ XVisualInfo *X11_GLES_GetVisual(SDL_VideoDevice *_this, Display *display, int sc
                 }
             }
         }
+    } else {
+        vi_in.screen = screen;
+        vi_in.visualid = visual_id;
+        egl_visualinfo = X11_XGetVisualInfo(display, VisualScreenMask | VisualIDMask, &vi_in, &out_count);
     }
+
     return egl_visualinfo;
 }
 

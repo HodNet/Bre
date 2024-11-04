@@ -115,7 +115,7 @@ static bool HIDAPI_DriverCombined_RumbleJoystick(SDL_HIDAPI_Device *device, SDL_
 
     for (i = 0; i < device->num_children; ++i) {
         SDL_HIDAPI_Device *child = device->children[i];
-        if (child->driver->RumbleJoystick(child, joystick, low_frequency_rumble, high_frequency_rumble)) {
+        if (child->driver->RumbleJoystick(child, joystick, low_frequency_rumble, high_frequency_rumble) == 0) {
             result = true;
         }
     }
@@ -129,7 +129,7 @@ static bool HIDAPI_DriverCombined_RumbleJoystickTriggers(SDL_HIDAPI_Device *devi
 
     for (i = 0; i < device->num_children; ++i) {
         SDL_HIDAPI_Device *child = device->children[i];
-        if (child->driver->RumbleJoystickTriggers(child, joystick, left_rumble, right_rumble)) {
+        if (child->driver->RumbleJoystickTriggers(child, joystick, left_rumble, right_rumble) == 0) {
             result = true;
         }
     }
@@ -155,7 +155,7 @@ static bool HIDAPI_DriverCombined_SetJoystickLED(SDL_HIDAPI_Device *device, SDL_
 
     for (i = 0; i < device->num_children; ++i) {
         SDL_HIDAPI_Device *child = device->children[i];
-        if (child->driver->SetJoystickLED(child, joystick, red, green, blue)) {
+        if (child->driver->SetJoystickLED(child, joystick, red, green, blue) == 0) {
             result = true;
         }
     }
@@ -174,7 +174,7 @@ static bool HIDAPI_DriverCombined_SetJoystickSensorsEnabled(SDL_HIDAPI_Device *d
 
     for (i = 0; i < device->num_children; ++i) {
         SDL_HIDAPI_Device *child = device->children[i];
-        if (child->driver->SetJoystickSensorsEnabled(child, joystick, enabled)) {
+        if (child->driver->SetJoystickSensorsEnabled(child, joystick, enabled) == 0) {
             result = true;
         }
     }

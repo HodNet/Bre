@@ -88,7 +88,6 @@
 
 // Handle drag-and-drop of files onto the SDL window.
 - (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender;
-- (void)draggingExited:(id<NSDraggingInfo>)sender;
 - (NSDragOperation)draggingUpdated:(id<NSDraggingInfo>)sender;
 - (BOOL)performDragOperation:(id<NSDraggingInfo>)sender;
 - (BOOL)wantsPeriodicDraggingUpdates;
@@ -173,12 +172,6 @@
     }
 
     return NSDragOperationNone; // no idea what to do with this, reject it.
-}
-
-- (void)draggingExited:(id<NSDraggingInfo>)sender
-{
-    SDL_Window *sdlwindow = [self findSDLWindow];
-    SDL_SendDropComplete(sdlwindow);
 }
 
 - (NSDragOperation)draggingUpdated:(id<NSDraggingInfo>)sender

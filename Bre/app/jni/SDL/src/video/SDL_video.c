@@ -59,10 +59,6 @@
 #include <emscripten.h>
 #endif
 
-#ifdef SDL_PLATFORM_3DS
-#include <3ds.h>
-#endif
-
 #ifdef SDL_PLATFORM_LINUX
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -71,9 +67,6 @@
 
 // Available video drivers
 static VideoBootStrap *bootstrap[] = {
-#ifdef SDL_VIDEO_DRIVER_PRIVATE
-    &PRIVATE_bootstrap,
-#endif
 #ifdef SDL_VIDEO_DRIVER_COCOA
     &COCOA_bootstrap,
 #endif
@@ -139,9 +132,6 @@ static VideoBootStrap *bootstrap[] = {
 #ifdef SDL_INPUT_LINUXEV
     &DUMMY_evdev_bootstrap,
 #endif
-#endif
-#ifdef SDL_VIDEO_DRIVER_OPENVR
-    &OPENVR_bootstrap,
 #endif
     NULL
 };
@@ -268,7 +258,7 @@ typedef struct
 
 static Uint32 SDL_DefaultGraphicsBackends(SDL_VideoDevice *_this)
 {
-#if (defined(SDL_VIDEO_OPENGL) && defined(SDL_PLATFORM_MACOS)) || (defined(SDL_PLATFORM_IOS) && !TARGET_OS_MACCATALYST)
+#if (defined(SDL_VIDEO_OPENGL) && defined(SDL_PLATFORM_MACOS)) || (defined(SDL_PLATFORM_IOS) && !TARGET_OS_MACCATALYST) || defined(SDL_PLATFORM_ANDROID)
     if (_this->GL_CreateContext) {
         return SDL_WINDOW_OPENGL;
     }
@@ -276,11 +266,6 @@ static Uint32 SDL_DefaultGraphicsBackends(SDL_VideoDevice *_this)
 #if defined(SDL_VIDEO_METAL) && (TARGET_OS_MACCATALYST || defined(SDL_PLATFORM_MACOS) || defined(SDL_PLATFORM_IOS))
     if (_this->Metal_CreateView) {
         return SDL_WINDOW_METAL;
-    }
-#endif
-#if defined(SDL_VIDEO_OPENGL) && defined(SDL_VIDEO_DRIVER_OPENVR)
-    if (SDL_strcmp(_this->name, "openvr") == 0) {
-        return SDL_WINDOW_OPENGL;
     }
 #endif
     return 0;
@@ -1319,16 +1304,14 @@ SDL_DisplayMode **SDL_GetFullscreenDisplayModes(SDL_DisplayID displayID, int *co
 
 bool SDL_GetClosestFullscreenDisplayMode(SDL_DisplayID displayID, int w, int h, float refresh_rate, bool include_high_density_modes, SDL_DisplayMode *result)
 {
-    if (!result) {
-        return SDL_InvalidParamError("closest"); // Parameter `result` is called `closest` in the header.
-    }
-
     const SDL_DisplayMode *mode, *closest = NULL;
     float aspect_ratio;
     int i;
     SDL_VideoDisplay *display = SDL_GetVideoDisplay(displayID);
 
-    SDL_zerop(result);
+    if (result) {
+        SDL_zerop(result);
+    }
 
     CHECK_DISPLAY_MAGIC(display, false);
 
@@ -1380,9 +1363,9 @@ bool SDL_GetClosestFullscreenDisplayMode(SDL_DisplayID displayID, int w, int h, 
     if (!closest) {
         return SDL_SetError("Couldn't find any matching video modes");
     }
-
-    SDL_copyp(result, closest);
-
+    if (result) {
+        SDL_copyp(result, closest);
+    }
     return true;
 }
 
@@ -1596,21 +1579,11 @@ void SDL_GlobalToRelativeForWindow(SDL_Window *window, int abs_x, int abs_y, int
 
 SDL_DisplayID SDL_GetDisplayForPoint(const SDL_Point *point)
 {
-    if (!point) {
-        SDL_InvalidParamError("point");
-        return 0;
-    }
-
     return GetDisplayForRect(point->x, point->y, 1, 1);
 }
 
 SDL_DisplayID SDL_GetDisplayForRect(const SDL_Rect *rect)
 {
-    if (!rect) {
-        SDL_InvalidParamError("rect");
-        return 0;
-    }
-
     return GetDisplayForRect(rect->x, rect->y, rect->w, rect->h);
 }
 
@@ -1763,17 +1736,11 @@ float SDL_GetWindowDisplayScale(SDL_Window *window)
 
 static void SDL_CheckWindowDisplayScaleChanged(SDL_Window *window)
 {
+    float pixel_density = SDL_GetWindowPixelDensity(window);
+    float content_scale = SDL_GetDisplayContentScale(SDL_GetDisplayForWindowPosition(window));
     float display_scale;
 
-    if (_this->GetWindowContentScale) {
-        display_scale = _this->GetWindowContentScale(_this, window);
-    } else {
-        const float pixel_density = SDL_GetWindowPixelDensity(window);
-        const float content_scale = SDL_GetDisplayContentScale(SDL_GetDisplayForWindowPosition(window));
-
-        display_scale = pixel_density * content_scale;
-    }
-
+    display_scale = (pixel_density * content_scale);
     if (display_scale != window->display_scale) {
         window->display_scale = display_scale;
         SDL_SendWindowEvent(window, SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED, 0, 0);
@@ -2337,7 +2304,7 @@ SDL_Window *SDL_CreateWindowWithProperties(SDL_PropertiesID props)
         SDL_GetDisplayUsableBounds(displayID, &bounds);
         if (w > bounds.w || h > bounds.h) {
             // This window is larger than the usable bounds, just center on the display
-            SDL_GetDisplayBounds(displayID, &bounds);
+            SDL_GetDisplayUsableBounds(displayID, &bounds);
         }
         if (SDL_WINDOWPOS_ISCENTERED(x) || SDL_WINDOWPOS_ISUNDEFINED(x)) {
             if (SDL_WINDOWPOS_ISUNDEFINED(x)) {
@@ -4555,7 +4522,7 @@ void SDL_GL_ResetAttributes(void)
     _this->gl_config.egl_platform = 0;
 }
 
-bool SDL_GL_SetAttribute(SDL_GLAttr attr, int value)
+bool SDL_GL_SetAttribute(SDL_GLattr attr, int value)
 {
 #if defined(SDL_VIDEO_OPENGL) || defined(SDL_VIDEO_OPENGL_ES) || defined(SDL_VIDEO_OPENGL_ES2)
     bool result;
@@ -4673,7 +4640,7 @@ bool SDL_GL_SetAttribute(SDL_GLAttr attr, int value)
 #endif // SDL_VIDEO_OPENGL
 }
 
-bool SDL_GL_GetAttribute(SDL_GLAttr attr, int *value)
+bool SDL_GL_GetAttribute(SDL_GLattr attr, int *value)
 {
 #if defined(SDL_VIDEO_OPENGL) || defined(SDL_VIDEO_OPENGL_ES) || defined(SDL_VIDEO_OPENGL_ES2)
     PFNGLGETERRORPROC glGetErrorFunc;
@@ -5550,23 +5517,6 @@ bool SDL_ShowSimpleMessageBox(SDL_MessageBoxFlags flags, const char *title, cons
         alert(UTF8ToString($0) + "\n\n" + UTF8ToString($1));
     },
             title, message);
-    return true;
-#elif defined(SDL_PLATFORM_3DS)
-    errorConf errCnf;
-    bool hasGpuRight;
-
-    // If the video subsystem has not been initialised, set up graphics temporarily
-    hasGpuRight = gspHasGpuRight();
-    if (!hasGpuRight)
-        gfxInitDefault();
-
-    errorInit(&errCnf, ERROR_TEXT_WORD_WRAP, CFG_LANGUAGE_EN);
-    errorText(&errCnf, message);
-    errorDisp(&errCnf);
-
-    if (!hasGpuRight)
-        gfxExit();
-
     return true;
 #else
     SDL_MessageBoxData data;

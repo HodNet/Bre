@@ -7,7 +7,6 @@ typedef enum
 {
     YCBCR_601_FULL,
     YCBCR_601_LIMITED,
-    YCBCR_709_FULL,
     YCBCR_709_LIMITED,
     YCBCR_2020_NCL_FULL,
 } YCbCrType;

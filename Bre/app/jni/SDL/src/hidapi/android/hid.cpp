@@ -98,6 +98,9 @@ struct hid_device_
 	int m_nDeviceRefCount;
 };
 
+static JavaVM *g_JVM;
+static pthread_key_t g_ThreadKey;
+
 template<class T>
 class hid_device_ref
 {
@@ -492,7 +495,10 @@ public:
 
 	bool BOpen()
 	{
-		JNIEnv *env = (JNIEnv *)SDL_GetAndroidJNIEnv();
+		// Make sure thread is attached to JVM/env
+		JNIEnv *env;
+		g_JVM->AttachCurrentThread( &env, NULL );
+		pthread_setspecific( g_ThreadKey, (void*)env );
 
 		if ( !g_HIDDeviceManagerCallbackHandler )
 		{
@@ -500,38 +506,46 @@ public:
 			return false;
 		}
 
+		m_bIsWaitingForOpen = false;
+		m_bOpenResult = env->CallBooleanMethod( g_HIDDeviceManagerCallbackHandler, g_midHIDDeviceManagerOpen, m_nId );
+		ExceptionCheck( env, "BOpen" );
+
 		if ( m_bIsWaitingForOpen )
 		{
-			SDL_SetError( "Waiting for permission" );
-			return false;
+			hid_mutex_guard cvl( &m_cvLock );
+
+			const int OPEN_TIMEOUT_SECONDS = 60;
+			struct timespec ts, endtime;
+			clock_gettime( CLOCK_REALTIME, &ts );
+			endtime = ts;
+			endtime.tv_sec += OPEN_TIMEOUT_SECONDS;
+			do
+			{
+				if ( pthread_cond_timedwait( &m_cv, &m_cvLock, &endtime ) != 0 )
+				{
+					break;
+				}
+			}
+			while ( m_bIsWaitingForOpen && get_timespec_ms( ts ) < get_timespec_ms( endtime ) );
 		}
 
 		if ( !m_bOpenResult )
 		{
-			m_bOpenResult = env->CallBooleanMethod( g_HIDDeviceManagerCallbackHandler, g_midHIDDeviceManagerOpen, m_nId );
-			ExceptionCheck( env, "BOpen" );
-
 			if ( m_bIsWaitingForOpen )
 			{
-				LOGV( "Device open waiting for permission" );
-				SDL_SetError( "Waiting for permission" );
-				m_bWasOpenPending = true;
-				return false;
+				LOGV( "Device open failed - timed out waiting for device permission" );
 			}
-
-			if ( !m_bOpenResult )
+			else
 			{
 				LOGV( "Device open failed" );
-				SDL_SetError( "Device open failed" );
-				return false;
 			}
+			return false;
 		}
 
 		m_pDevice = new hid_device;
 		m_pDevice->m_nId = m_nId;
 		m_pDevice->m_nDeviceRefCount = 1;
 		LOGD("Creating device %d (%p), refCount = 1\n", m_pDevice->m_nId, m_pDevice);
-
 		return true;
 	}
 
@@ -540,42 +554,14 @@ public:
 		m_bIsWaitingForOpen = true;
 	}
 
-	bool BOpenPending() const
-	{
-		return m_bIsWaitingForOpen;
-	}
-
-	void SetWasOpenPending( bool bState )
-	{
-		m_bWasOpenPending = bState;
-	}
-
-	bool BWasOpenPending() const
-	{
-		return m_bWasOpenPending;
-	}
-
 	void SetOpenResult( bool bResult )
 	{
 		if ( m_bIsWaitingForOpen )
 		{
 			m_bOpenResult = bResult;
 			m_bIsWaitingForOpen = false;
-
-			if ( m_bOpenResult )
-			{
-				LOGV( "Device open succeeded" );
-			}
-			else
-			{
-				LOGV( "Device open failed" );
-			}
+			pthread_cond_signal( &m_cv );
 		}
-	}
-
-	bool BOpenResult() const
-	{
-		return m_bOpenResult;
 	}
 
 	void ProcessInput( const uint8_t *pBuf, size_t nBufSize )
@@ -624,18 +610,23 @@ public:
 
 	int WriteReport( const unsigned char *pData, size_t nDataLen, bool bFeature )
 	{
-		JNIEnv *env = (JNIEnv *)SDL_GetAndroidJNIEnv();
+		// Make sure thread is attached to JVM/env
+		JNIEnv *env;
+		g_JVM->AttachCurrentThread( &env, NULL );
+		pthread_setspecific( g_ThreadKey, (void*)env );
 
-		if ( !g_HIDDeviceManagerCallbackHandler )
+		int nRet = -1;
+		if ( g_HIDDeviceManagerCallbackHandler )
+		{
+			jbyteArray pBuf = NewByteArray( env, pData, nDataLen );
+			nRet = env->CallIntMethod( g_HIDDeviceManagerCallbackHandler, g_midHIDDeviceManagerWriteReport, m_nId, pBuf, bFeature );
+			ExceptionCheck( env, "WriteReport" );
+			env->DeleteLocalRef( pBuf );
+		}
+		else
 		{
 			LOGV( "WriteReport without callback handler" );
-			return -1;
 		}
-
-		jbyteArray pBuf = NewByteArray( env, pData, nDataLen );
-		int nRet = env->CallIntMethod( g_HIDDeviceManagerCallbackHandler, g_midHIDDeviceManagerWriteReport, m_nId, pBuf, bFeature );
-		ExceptionCheck( env, "WriteReport" );
-		env->DeleteLocalRef( pBuf );
 		return nRet;
 	}
 
@@ -654,7 +645,10 @@ public:
 
 	int ReadReport( unsigned char *pData, size_t nDataLen, bool bFeature )
 	{
-		JNIEnv *env = (JNIEnv *)SDL_GetAndroidJNIEnv();
+		// Make sure thread is attached to JVM/env
+		JNIEnv *env;
+		g_JVM->AttachCurrentThread( &env, NULL );
+		pthread_setspecific( g_ThreadKey, (void*)env );
 
 		if ( !g_HIDDeviceManagerCallbackHandler )
 		{
@@ -727,15 +721,15 @@ public:
 
 	void Close( bool bDeleteDevice )
 	{
-		JNIEnv *env = (JNIEnv *)SDL_GetAndroidJNIEnv();
+		// Make sure thread is attached to JVM/env
+		JNIEnv *env;
+		g_JVM->AttachCurrentThread( &env, NULL );
+		pthread_setspecific( g_ThreadKey, (void*)env );
 
 		if ( g_HIDDeviceManagerCallbackHandler )
 		{
-			if ( !m_bIsWaitingForOpen && m_bOpenResult )
-			{
-				env->CallVoidMethod( g_HIDDeviceManagerCallbackHandler, g_midHIDDeviceManagerClose, m_nId );
-				ExceptionCheck( env, "Close" );
-			}
+			env->CallVoidMethod( g_HIDDeviceManagerCallbackHandler, g_midHIDDeviceManagerClose, m_nId );
+			ExceptionCheck( env, "Close" );
 		}
 
 		hid_mutex_guard dataLock( &m_dataLock );
@@ -770,7 +764,6 @@ private:
 	pthread_mutex_t m_cvLock = PTHREAD_MUTEX_INITIALIZER; // This lock has to be held to access any variables below
 	pthread_cond_t m_cv = PTHREAD_COND_INITIALIZER;
 	bool m_bIsWaitingForOpen = false;
-	bool m_bWasOpenPending = false;
 	bool m_bOpenResult = false;
 	bool m_bIsWaitingForReportResponse = false;
 	int m_nReportResponseError = 0;
@@ -798,6 +791,16 @@ static hid_device_ref<CHIDDevice> FindDevice( int nDeviceId )
 		}
 	}
 	return pDevice;
+}
+
+static void ThreadDestroyed(void* value)
+{
+	/* The thread is being destroyed, detach it from the Java VM and set the g_ThreadKey value to NULL as required */
+	JNIEnv *env = (JNIEnv*) value;
+	if (env != NULL) {
+		g_JVM->DetachCurrentThread();
+		pthread_setspecific(g_ThreadKey, NULL);
+	}
 }
 
 
@@ -830,6 +833,16 @@ extern "C"
 JNIEXPORT void JNICALL HID_DEVICE_MANAGER_JAVA_INTERFACE(HIDDeviceRegisterCallback)(JNIEnv *env, jobject thiz )
 {
 	LOGV( "HIDDeviceRegisterCallback()");
+
+	env->GetJavaVM( &g_JVM );
+
+	/*
+	 * Create mThreadKey so we can keep track of the JNIEnv assigned to each thread
+	 * Refer to http://developer.android.com/guide/practices/design/jni.html for the rationale behind this
+	 */
+	if (pthread_key_create(&g_ThreadKey, ThreadDestroyed) != 0) {
+		__android_log_print(ANDROID_LOG_ERROR, TAG, "Error initializing pthread key");
+	}
 
 	if ( g_HIDDeviceManagerCallbackHandler != NULL )
 	{
@@ -1016,43 +1029,51 @@ JNIEXPORT void JNICALL HID_DEVICE_MANAGER_JAVA_INTERFACE(HIDDeviceReportResponse
 extern "C"
 {
 
-static void SDLCALL RequestBluetoothPermissionCallback( void *userdata, const char *permission, bool granted )
+// !!! FIXME: make this non-blocking!
+static void SDLCALL RequestAndroidPermissionBlockingCallback(void *userdata, const char *permission, bool granted)
 {
-	SDL_Log( "Bluetooth permission %s\n", granted ? "granted" : "denied" );
-
-	if ( granted && g_HIDDeviceManagerCallbackHandler )
-	{
-		JNIEnv *env = (JNIEnv *)SDL_GetAndroidJNIEnv();
-
-		env->CallBooleanMethod( g_HIDDeviceManagerCallbackHandler, g_midHIDDeviceManagerInitialize, false, true );
-	}
+    SDL_SetAtomicInt((SDL_AtomicInt *) userdata, granted ? 1 : -1);
 }
+
+static bool RequestBluetoothPermissions(const char *permission)
+{
+    // !!! FIXME: make this non-blocking!
+    SDL_AtomicInt permission_response;
+    SDL_SetAtomicInt(&permission_response, 0);
+    if (!SDL_RequestAndroidPermission(permission, RequestAndroidPermissionBlockingCallback, &permission_response)) {
+        return false;
+    }
+
+    while (SDL_GetAtomicInt(&permission_response) == 0) {
+        SDL_Delay(10);
+    }
+
+    return SDL_GetAtomicInt(&permission_response) > 0;
+}
+
 
 int hid_init(void)
 {
 	if ( !g_initialized && g_HIDDeviceManagerCallbackHandler )
 	{
 		// HIDAPI doesn't work well with Android < 4.3
-		if ( SDL_GetAndroidSDKVersion() >= 18 )
-		{
-			JNIEnv *env = (JNIEnv *)SDL_GetAndroidJNIEnv();
-
-			env->CallBooleanMethod( g_HIDDeviceManagerCallbackHandler, g_midHIDDeviceManagerInitialize, true, false );
+		if (SDL_GetAndroidSDKVersion() >= 18) {
+			// Make sure thread is attached to JVM/env
+			JNIEnv *env;
+			g_JVM->AttachCurrentThread( &env, NULL );
+			pthread_setspecific( g_ThreadKey, (void*)env );
 
 			// Bluetooth is currently only used for Steam Controllers, so check that hint
 			// before initializing Bluetooth, which will prompt the user for permission.
-			if ( SDL_GetHintBoolean( SDL_HINT_JOYSTICK_HIDAPI_STEAM, false ) )
-			{
-				if ( SDL_GetAndroidSDKVersion() < 31 )
-				{
-					env->CallBooleanMethod( g_HIDDeviceManagerCallbackHandler, g_midHIDDeviceManagerInitialize, false, true );
-				}
-				else
-				{
-					SDL_Log( "Requesting Bluetooth permission" );
-					SDL_RequestAndroidPermission( "android.permission.BLUETOOTH_CONNECT", RequestBluetoothPermissionCallback, NULL );
+			bool init_usb = true;
+			bool init_bluetooth = false;
+			if (SDL_GetHintBoolean(SDL_HINT_JOYSTICK_HIDAPI_STEAM, false)) {
+				if (SDL_GetAndroidSDKVersion() < 31 ||
+					RequestBluetoothPermissions("android.permission.BLUETOOTH_CONNECT")) {
+					init_bluetooth = true;
 				}
 			}
+			env->CallBooleanMethod( g_HIDDeviceManagerCallbackHandler, g_midHIDDeviceManagerInitialize, init_usb, init_bluetooth );
 			ExceptionCheck( env, NULL, "hid_init" );
 		}
 		g_initialized = true;	// Regardless of result, so it's only called once
@@ -1067,18 +1088,6 @@ struct hid_device_info HID_API_EXPORT * HID_API_CALL hid_enumerate(unsigned shor
 	hid_mutex_guard l( &g_DevicesMutex );
 	for ( hid_device_ref<CHIDDevice> pDevice = g_Devices; pDevice; pDevice = pDevice->next )
 	{
-		// Don't enumerate devices that are currently being opened, we'll re-enumerate them when we're done
-		// Make sure we skip them at least once, so they get removed and then re-added to the caller's device list
-		if ( pDevice->BWasOpenPending() )
-		{
-			// Don't enumerate devices that failed to open, otherwise the application might try to keep prompting for access
-			if ( !pDevice->BOpenPending() && pDevice->BOpenResult() )
-			{
-				pDevice->SetWasOpenPending( false );
-			}
-			continue;
-		}
-
 		const hid_device_info *info = pDevice->GetDeviceInfo();
 
 		/* See if there are any devices we should skip in enumeration */
@@ -1139,12 +1148,7 @@ HID_API_EXPORT hid_device * HID_API_CALL hid_open_path(const char *path)
 			}
 		}
 	}
-	if ( !pDevice )
-	{
-		SDL_SetError( "Couldn't find device with path %s", path );
-		return NULL;
-	}
-	if ( pDevice->BOpen() )
+	if ( pDevice && pDevice->BOpen() )
 	{
 		return pDevice->GetDevice();
 	}
@@ -1155,7 +1159,7 @@ int  HID_API_EXPORT HID_API_CALL hid_write(hid_device *device, const unsigned ch
 {
 	if ( device )
 	{
-//		LOGV( "hid_write id=%d length=%zu", device->m_nId, length );
+		LOGV( "hid_write id=%d length=%zu", device->m_nId, length );
 		hid_device_ref<CHIDDevice> pDevice = FindDevice( device->m_nId );
 		if ( pDevice )
 		{
@@ -1219,7 +1223,7 @@ int HID_API_EXPORT HID_API_CALL hid_read_timeout(hid_device *device, unsigned ch
 // TODO: Implement blocking
 int  HID_API_EXPORT HID_API_CALL hid_read(hid_device *device, unsigned char *data, size_t length)
 {
-//	LOGV( "hid_read id=%d length=%zu", device->m_nId, length );
+	LOGV( "hid_read id=%d length=%zu", device->m_nId, length );
 	return hid_read_timeout( device, data, length, 0 );
 }
 

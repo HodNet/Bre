@@ -103,7 +103,6 @@ struct SDL_VideoData
         Atom SDL_FORMATS;
         Atom XdndAware;
         Atom XdndEnter;
-        Atom XdndLeave;
         Atom XdndPosition;
         Atom XdndStatus;
         Atom XdndTypeList;

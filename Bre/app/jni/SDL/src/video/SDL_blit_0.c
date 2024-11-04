@@ -604,8 +604,11 @@ SDL_FORCE_INLINE void BlitBto4Key(SDL_BlitInfo *info, const Uint32 srcbpp)
     }
 }
 
-static void BlitBtoNAlpha(SDL_BlitInfo *info)
+SDL_FORCE_INLINE void BlitBtoNAlpha(SDL_BlitInfo *info, const Uint32 srcbpp)
 {
+    const Uint32 mask = (1 << srcbpp) - 1;
+    const Uint32 align = (8 / srcbpp) - 1;
+
     int width = info->dst_w;
     int height = info->dst_h;
     Uint8 *src = info->src;
@@ -613,17 +616,15 @@ static void BlitBtoNAlpha(SDL_BlitInfo *info)
     int srcskip = info->src_skip;
     int dstskip = info->dst_skip;
     const SDL_Color *srcpal = info->src_pal->colors;
-    const SDL_PixelFormatDetails *srcfmt = info->src_fmt;
     const SDL_PixelFormatDetails *dstfmt = info->dst_fmt;
-    int srcbpp, dstbpp;
+    int dstbpp;
     int c;
-    Uint32 pixel, mask, align;
+    Uint32 pixel;
     unsigned sR, sG, sB;
     unsigned dR, dG, dB, dA;
     const unsigned A = info->a;
 
     // Set up some basic variables
-    srcbpp = srcfmt->bytes_per_pixel;
     dstbpp = dstfmt->bytes_per_pixel;
     if (srcbpp == 4)
         srcskip += width - (width + 1) / 2;
@@ -631,8 +632,6 @@ static void BlitBtoNAlpha(SDL_BlitInfo *info)
         srcskip += width - (width + 3) / 4;
     else if (srcbpp == 1)
         srcskip += width - (width + 7) / 8;
-    mask = (1 << srcbpp) - 1;
-    align = (8 / srcbpp) - 1;
 
     if (SDL_PIXELORDER(info->src_fmt->format) == SDL_BITMAPORDER_4321) {
         while (height--) {
@@ -681,27 +680,28 @@ static void BlitBtoNAlpha(SDL_BlitInfo *info)
     }
 }
 
-static void BlitBtoNAlphaKey(SDL_BlitInfo *info)
+SDL_FORCE_INLINE void BlitBtoNAlphaKey(SDL_BlitInfo *info, const Uint32 srcbpp)
 {
+    const Uint32 mask = (1 << srcbpp) - 1;
+    const Uint32 align = (8 / srcbpp) - 1;
+
     int width = info->dst_w;
     int height = info->dst_h;
     Uint8 *src = info->src;
     Uint8 *dst = info->dst;
     int srcskip = info->src_skip;
     int dstskip = info->dst_skip;
-    const SDL_PixelFormatDetails *srcfmt = info->src_fmt;
     const SDL_PixelFormatDetails *dstfmt = info->dst_fmt;
     const SDL_Color *srcpal = info->src_pal->colors;
-    int srcbpp, dstbpp;
+    int dstbpp;
     int c;
-    Uint32 pixel, mask, align;
+    Uint32 pixel;
     unsigned sR, sG, sB;
     unsigned dR, dG, dB, dA;
     const unsigned A = info->a;
     Uint32 ckey = info->colorkey;
 
     // Set up some basic variables
-    srcbpp = srcfmt->bytes_per_pixel;
     dstbpp = dstfmt->bytes_per_pixel;
     if (srcbpp == 4)
         srcskip += width - (width + 1) / 2;
@@ -709,8 +709,6 @@ static void BlitBtoNAlphaKey(SDL_BlitInfo *info)
         srcskip += width - (width + 3) / 4;
     else if (srcbpp == 1)
         srcskip += width - (width + 7) / 8;
-    mask = (1 << srcbpp) - 1;
-    align = (8 / srcbpp) - 1;
 
     if (SDL_PIXELORDER(info->src_fmt->format) == SDL_BITMAPORDER_4321) {
         while (height--) {
@@ -801,6 +799,16 @@ static const SDL_BlitFunc colorkey_blit_1b[] = {
     (SDL_BlitFunc)NULL, Blit1bto1Key, Blit1bto2Key, Blit1bto3Key, Blit1bto4Key
 };
 
+static void Blit1btoNAlpha(SDL_BlitInfo *info)
+{
+    BlitBtoNAlpha(info, 1);
+}
+
+static void Blit1btoNAlphaKey(SDL_BlitInfo *info)
+{
+    BlitBtoNAlphaKey(info, 1);
+}
+
 
 
 static void Blit2bto1(SDL_BlitInfo *info) {
@@ -842,6 +850,16 @@ static void Blit2bto4Key(SDL_BlitInfo *info) {
 static const SDL_BlitFunc colorkey_blit_2b[] = {
     (SDL_BlitFunc)NULL, Blit2bto1Key, Blit2bto2Key, Blit2bto3Key, Blit2bto4Key
 };
+
+static void Blit2btoNAlpha(SDL_BlitInfo *info)
+{
+    BlitBtoNAlpha(info, 2);
+}
+
+static void Blit2btoNAlphaKey(SDL_BlitInfo *info)
+{
+    BlitBtoNAlphaKey(info, 2);
+}
 
 
 
@@ -885,6 +903,16 @@ static const SDL_BlitFunc colorkey_blit_4b[] = {
     (SDL_BlitFunc)NULL, Blit4bto1Key, Blit4bto2Key, Blit4bto3Key, Blit4bto4Key
 };
 
+static void Blit4btoNAlpha(SDL_BlitInfo *info)
+{
+    BlitBtoNAlpha(info, 4);
+}
+
+static void Blit4btoNAlphaKey(SDL_BlitInfo *info)
+{
+    BlitBtoNAlphaKey(info, 4);
+}
+
 
 
 SDL_BlitFunc SDL_CalculateBlit0(SDL_Surface *surface)
@@ -912,10 +940,10 @@ SDL_BlitFunc SDL_CalculateBlit0(SDL_Surface *surface)
             break;
 
         case SDL_COPY_MODULATE_ALPHA | SDL_COPY_BLEND:
-            return which >= 2 ? BlitBtoNAlpha : (SDL_BlitFunc)NULL;
+            return which >= 2 ? Blit1btoNAlpha : (SDL_BlitFunc)NULL;
 
         case SDL_COPY_COLORKEY | SDL_COPY_MODULATE_ALPHA | SDL_COPY_BLEND:
-            return which >= 2 ? BlitBtoNAlphaKey : (SDL_BlitFunc)NULL;
+            return which >= 2 ? Blit1btoNAlphaKey : (SDL_BlitFunc)NULL;
         }
         return NULL;
     }
@@ -935,10 +963,10 @@ SDL_BlitFunc SDL_CalculateBlit0(SDL_Surface *surface)
             break;
 
         case SDL_COPY_MODULATE_ALPHA | SDL_COPY_BLEND:
-            return which >= 2 ? BlitBtoNAlpha : (SDL_BlitFunc)NULL;
+            return which >= 2 ? Blit2btoNAlpha : (SDL_BlitFunc)NULL;
 
         case SDL_COPY_COLORKEY | SDL_COPY_MODULATE_ALPHA | SDL_COPY_BLEND:
-            return which >= 2 ? BlitBtoNAlphaKey : (SDL_BlitFunc)NULL;
+            return which >= 2 ? Blit2btoNAlphaKey : (SDL_BlitFunc)NULL;
         }
         return NULL;
     }
@@ -958,10 +986,10 @@ SDL_BlitFunc SDL_CalculateBlit0(SDL_Surface *surface)
             break;
 
         case SDL_COPY_MODULATE_ALPHA | SDL_COPY_BLEND:
-            return which >= 2 ? BlitBtoNAlpha : (SDL_BlitFunc)NULL;
+            return which >= 2 ? Blit4btoNAlpha : (SDL_BlitFunc)NULL;
 
         case SDL_COPY_COLORKEY | SDL_COPY_MODULATE_ALPHA | SDL_COPY_BLEND:
-            return which >= 2 ? BlitBtoNAlphaKey : (SDL_BlitFunc)NULL;
+            return which >= 2 ? Blit4btoNAlphaKey : (SDL_BlitFunc)NULL;
         }
         return NULL;
     }

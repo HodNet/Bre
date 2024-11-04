@@ -49,11 +49,7 @@
 #include <SDL3/SDL_events.h>
 
 #ifndef SDL_MAIN_HANDLED
-    #if defined(SDL_PLATFORM_PRIVATE_MAIN)
-        /* Private platforms may have their own ideas about entry points. */
-        #include "SDL_main_private.h"
-
-    #elif defined(SDL_PLATFORM_WIN32)
+    #ifdef SDL_PLATFORM_WIN32
         /* On Windows SDL provides WinMain(), which parses the command line and passes
            the arguments to your main function.
 
@@ -90,14 +86,8 @@
          */
         #define SDL_MAIN_NEEDED
 
-        /* As this is launched from Java, the real entry point (main() function)
-           is outside of the the binary built from this code.
-           This define makes sure that, unlike on other platforms, SDL_main.h
-           and SDL_main_impl.h export an `SDL_main()` function (to be called
-           from Java), but don't implement a native `int main(int argc, char* argv[])`
-           or similar.
-         */
-        #define SDL_MAIN_EXPORTED
+        /* We need to export SDL_main so it can be launched from Java */
+        #define SDLMAIN_DECLSPEC    SDL_DECLSPEC
 
     #elif defined(SDL_PLATFORM_EMSCRIPTEN)
         /* On Emscripten, SDL provides a main function that converts URL
@@ -144,14 +134,9 @@
     #endif
 #endif /* SDL_MAIN_HANDLED */
 
-#ifdef SDL_MAIN_EXPORTED
-/* We need to export SDL_main so it can be launched from external code,
-   like SDLActivity.java on Android */
-#define SDLMAIN_DECLSPEC    SDL_DECLSPEC
-#else
-/* usually this is empty */
+#ifndef SDLMAIN_DECLSPEC
 #define SDLMAIN_DECLSPEC
-#endif /* SDL_MAIN_EXPORTED */
+#endif
 
 #ifdef SDL_WIKI_DOCUMENTATION_SECTION
 
@@ -168,7 +153,7 @@
  * docs/README-main-functions.md in the source tree) for a more detailed
  * explanation.
  *
- * \since This macro is used by the headers since SDL 3.1.3.
+ * \since This macro is used by the headers since SDL 3.0.0.
  *
  * \sa SDL_AppInit
  * \sa SDL_AppEvent
@@ -242,8 +227,6 @@ extern "C" {
  * SDL_APP_SUCCESS, SDL calls SDL_AppQuit and terminates with an exit code
  * that reports success to the platform.
  *
- * This function is called by SDL on the main thread.
- *
  * \param appstate a place where the app can optionally store a pointer for
  *                 future use.
  * \param argc the standard ANSI C main's argc; number of elements in `argv`.
@@ -252,7 +235,9 @@ extern "C" {
  * \returns SDL_APP_FAILURE to terminate with an error, SDL_APP_SUCCESS to
  *          terminate with success, SDL_APP_CONTINUE to continue.
  *
- * \since This function is available since SDL 3.1.3.
+ * \threadsafety This function is not thread safe.
+ *
+ * \since This function is available since SDL 3.0.0.
  *
  * \sa SDL_AppIterate
  * \sa SDL_AppEvent
@@ -295,16 +280,13 @@ extern SDLMAIN_DECLSPEC SDL_AppResult SDLCALL SDL_AppInit(void **appstate, int a
  * SDL_AppQuit and terminates with an exit code that reports success to the
  * platform.
  *
- * This function is called by SDL on the main thread.
- *
  * \param appstate an optional pointer, provided by the app in SDL_AppInit.
  * \returns SDL_APP_FAILURE to terminate with an error, SDL_APP_SUCCESS to
  *          terminate with success, SDL_APP_CONTINUE to continue.
  *
- * \threadsafety This function may get called concurrently with SDL_AppEvent()
- *               for events not pushed on the main thread.
+ * \threadsafety This function is not thread safe.
  *
- * \since This function is available since SDL 3.1.3.
+ * \since This function is available since SDL 3.0.0.
  *
  * \sa SDL_AppInit
  * \sa SDL_AppEvent
@@ -325,7 +307,7 @@ extern SDLMAIN_DECLSPEC SDL_AppResult SDLCALL SDL_AppIterate(void *appstate);
  * function. SDL is responsible for pumping the event queue between each call
  * to SDL_AppIterate, so in normal operation one should only get events in a
  * serial fashion, but be careful if you have a thread that explicitly calls
- * SDL_PushEvent. SDL itself will push events to the queue on the main thread.
+ * SDL_PushEvent.
  *
  * Events sent to this function are not owned by the app; if you need to save
  * the data, you should copy it.
@@ -349,11 +331,9 @@ extern SDLMAIN_DECLSPEC SDL_AppResult SDLCALL SDL_AppIterate(void *appstate);
  * \returns SDL_APP_FAILURE to terminate with an error, SDL_APP_SUCCESS to
  *          terminate with success, SDL_APP_CONTINUE to continue.
  *
- * \threadsafety This function may get called concurrently with
- *               SDL_AppIterate() or SDL_AppQuit() for events not pushed from
- *               the main thread.
+ * \threadsafety This function is not thread safe.
  *
- * \since This function is available since SDL 3.1.3.
+ * \since This function is available since SDL 3.0.0.
  *
  * \sa SDL_AppInit
  * \sa SDL_AppIterate
@@ -384,15 +364,12 @@ extern SDLMAIN_DECLSPEC SDL_AppResult SDLCALL SDL_AppEvent(void *appstate, SDL_E
  * function call is the last time this pointer will be provided, so any
  * resources to it should be cleaned up here.
  *
- * This function is called by SDL on the main thread.
- *
  * \param appstate an optional pointer, provided by the app in SDL_AppInit.
  * \param result the result code that terminated the app (success or failure).
  *
- * \threadsafety SDL_AppEvent() may get called concurrently with this function
- *               if other threads that push events are still active.
+ * \threadsafety This function is not thread safe.
  *
- * \since This function is available since SDL 3.1.3.
+ * \since This function is available since SDL 3.0.0.
  *
  * \sa SDL_AppInit
  */
@@ -410,7 +387,7 @@ extern SDLMAIN_DECLSPEC void SDLCALL SDL_AppQuit(void *appstate, SDL_AppResult r
  *          program completion, and small non-zero values are considered
  *          errors.
  *
- * \since This datatype is available since SDL 3.1.3.
+ * \since This datatype is available since SDL 3.0.0.
  */
 typedef int (SDLCALL *SDL_main_func)(int argc, char *argv[]);
 
@@ -443,7 +420,7 @@ typedef int (SDLCALL *SDL_main_func)(int argc, char *argv[]);
  *
  * \threadsafety This is the program entry point.
  *
- * \since This function is available since SDL 3.1.3.
+ * \since This function is available since SDL 3.0.0.
  */
 extern SDLMAIN_DECLSPEC int SDLCALL SDL_main(int argc, char *argv[]);
 
@@ -456,7 +433,7 @@ extern SDLMAIN_DECLSPEC int SDLCALL SDL_main(int argc, char *argv[]);
  * will not be changed it is necessary to define SDL_MAIN_HANDLED before
  * including SDL.h.
  *
- * \since This function is available since SDL 3.1.3.
+ * \since This function is available since SDL 3.0.0.
  *
  * \sa SDL_Init
  */
@@ -488,7 +465,7 @@ extern SDL_DECLSPEC void SDLCALL SDL_SetMainReady(void);
  * \threadsafety Generally this is called once, near startup, from the
  *               process's initial thread.
  *
- * \since This function is available since SDL 3.1.3.
+ * \since This function is available since SDL 3.0.0.
  */
 extern SDL_DECLSPEC int SDLCALL SDL_RunApp(int argc, char *argv[], SDL_main_func mainFunction, void *reserved);
 
@@ -515,7 +492,7 @@ extern SDL_DECLSPEC int SDLCALL SDL_RunApp(int argc, char *argv[], SDL_main_func
  * \threadsafety It is not safe to call this anywhere except as the only
  *               function call in SDL_main.
  *
- * \since This function is available since SDL 3.1.3.
+ * \since This function is available since SDL 3.0.0.
  */
 extern SDL_DECLSPEC int SDLCALL SDL_EnterAppMainCallbacks(int argc, char *argv[], SDL_AppInit_func appinit, SDL_AppIterate_func appiter, SDL_AppEvent_func appevent, SDL_AppQuit_func appquit);
 
@@ -544,7 +521,7 @@ extern SDL_DECLSPEC int SDLCALL SDL_EnterAppMainCallbacks(int argc, char *argv[]
  * \returns true on success or false on failure; call SDL_GetError() for more
  *          information.
  *
- * \since This function is available since SDL 3.1.3.
+ * \since This function is available since SDL 3.0.0.
  */
 extern SDL_DECLSPEC bool SDLCALL SDL_RegisterApp(const char *name, Uint32 style, void *hInst);
 
@@ -561,7 +538,7 @@ extern SDL_DECLSPEC bool SDLCALL SDL_RegisterApp(const char *name, Uint32 style,
  * deregistered when the registration counter in SDL_RegisterApp decrements to
  * zero through calls to this function.
  *
- * \since This function is available since SDL 3.1.3.
+ * \since This function is available since SDL 3.0.0.
  */
 extern SDL_DECLSPEC void SDLCALL SDL_UnregisterApp(void);
 
@@ -572,7 +549,7 @@ extern SDL_DECLSPEC void SDLCALL SDL_UnregisterApp(void);
 /**
  * Callback from the application to let the suspend continue.
  *
- * \since This function is available since SDL 3.1.3.
+ * \since This function is available since SDL 3.0.0.
  */
 extern SDL_DECLSPEC void SDLCALL SDL_GDKSuspendComplete(void);
 
@@ -585,8 +562,14 @@ extern SDL_DECLSPEC void SDLCALL SDL_GDKSuspendComplete(void);
 #include <SDL3/SDL_close_code.h>
 
 #if !defined(SDL_MAIN_HANDLED) && !defined(SDL_MAIN_NOIMPL)
-    /* include header-only SDL_main implementations */
-    #if defined(SDL_MAIN_USE_CALLBACKS) || defined(SDL_MAIN_NEEDED) || defined(SDL_MAIN_AVAILABLE)
+    /* include header-only SDL_main implementations
+     * Note: currently Android is the only platform where we rename main() to SDL_main() but
+     *  do *not* use SDL_main_impl.h (because SDL_main() is called from external Java code).
+     *  If other platforms like that turn up, add them next to "defined(SDL_PLATFORM_ANDROID)"
+     */
+    #if (defined(SDL_MAIN_USE_CALLBACKS) || defined(SDL_MAIN_NEEDED) || defined(SDL_MAIN_AVAILABLE)) && \
+        !defined(SDL_PLATFORM_ANDROID)
+
         /* platforms which main (-equivalent) can be implemented in plain C */
         #include <SDL3/SDL_main_impl.h>
     #endif
