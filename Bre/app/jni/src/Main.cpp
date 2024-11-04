@@ -4,6 +4,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <SDL3_image/SDL_image.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <vector>
 #include "view/activities/FreePlayActivity.hpp"
 
@@ -33,10 +34,21 @@ public:
 
         if (!IMG_Init(IMG_INIT_PNG | IMG_INIT_JPG)) {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "IMG_Init failed.");
+            IMG_Quit();
             SDL_Quit();
             return 1;
         } else {
             SDL_Log("IMG_Init success.");
+        }
+
+        if (!TTF_Init()) {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TTF_Init failed.");
+            TTF_Quit();
+            IMG_Quit();
+            SDL_Quit();
+            return 1;
+        } else {
+            SDL_Log("TTF_Init success.");
         }
 
         /*
@@ -65,6 +77,7 @@ public:
 
         SDL_Quit();
         IMG_Quit();
+        TTF_Quit();
         return 0;
     }
 };

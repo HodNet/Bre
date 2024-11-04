@@ -2,7 +2,7 @@
 SDL_TTF_LOCAL_PATH := $(call my-dir)
 
 # Enable this if you want to use HarfBuzz
-SUPPORT_HARFBUZZ ?= true
+SUPPORT_HARFBUZZ ?= false
 HARFBUZZ_LIBRARY_PATH := external/harfbuzz
 
 FREETYPE_LIBRARY_PATH := external/freetype
@@ -23,7 +23,11 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE := SDL3_ttf
 
-LOCAL_SRC_FILES := src/SDL_ttf.c.neon
+LOCAL_SRC_FILES := \
+	src/SDL_hashtable.c \
+    	src/SDL_renderer_textengine.c \
+	src/SDL_surface_textengine.c \
+    	src/SDL_ttf.c
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 

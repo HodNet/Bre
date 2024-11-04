@@ -45,6 +45,23 @@ if(NOT TARGET SDL3_image::SDL3_image)
     message(FATAL_ERROR "Cannot find SDL3_image.")
 endif()
 
+# Same but for SDL3_ttf
+if(NOT TARGET SDL3_ttf::SDL3_ttf)
+    find_package(SDL3_ttf CONFIG)
+endif()
+
+if(NOT TARGET SDL3_ttf::SDL3_ttf)
+    find_library(SDL3_ttf_LIBRARY NAMES "SDL3_ttf")
+    find_path(SDL3_ttf_INCLUDE_DIR NAMES "SDL3_ttf/SDL_ttf.h")
+    add_library(SDL3_ttf::SDL3_ttf UNKNOWN IMPORTED)
+    set_property(TARGET SDL3_ttf::SDL3_ttf PROPERTY IMPORTED_LOCATION "${SDL3_ttf_LIBRARY}")
+    set_property(TARGET SDL3_ttf::SDL3_ttf PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${SDL3_ttf_INCLUDE_DIR}")
+endif()
+
+if(NOT TARGET SDL3_ttf::SDL3_ttf)
+    message(FATAL_ERROR "Cannot find SDL3_ttf.")
+endif()
+
 add_library(main SHARED
         YourSourceHere.c
         Main.cpp
