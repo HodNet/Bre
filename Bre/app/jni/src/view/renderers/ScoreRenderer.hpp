@@ -62,7 +62,7 @@ public:
             float screen_w = FreePlayWorld::getScreenSize()->w;
             float screen_h = FreePlayWorld::getScreenSize()->h;
             score->getRect().setX(screen_w / 2 - scoreSurface->w / 2);
-            score->getRect().setY(screen_h - 16);
+            score->getRect().setY(screen_h - dimens::vertical_margin);
             score->getRect().setW(scoreSurface->w);
             score->getRect().setH(scoreSurface->h);
 
