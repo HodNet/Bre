@@ -24,7 +24,7 @@ public:
     virtual void resume() = 0;
 
     /**
-     * Should be called when the renderer get destroyed
+     * Should be called when you are done with rendering the object. It frees all the resources
      */
     virtual void destroy() = 0;
 };

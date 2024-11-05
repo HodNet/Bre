@@ -5,10 +5,14 @@
 #ifndef BRE_SCORERENDERER_HPP
 #define BRE_SCORERENDERER_HPP
 
-#include "../../model/entities/Score.hpp"
-#include "SDL3/SDL.h"
+#include <SDL3/SDL.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
-class ScoreRenderer {
+#include "Renderer.hpp"
+#include "../../controller/utils/Utils.hpp"
+#include "../../model/entities/Score.hpp"
+
+class ScoreRenderer : public Renderer {
 
 private:
     Score* score;
@@ -18,12 +22,79 @@ private:
     SDL_FRect scoreRect;
     SDL_Surface* scoreSurface;
     SDL_Texture* scoreTexture;
+    TTF_Font* scoreFont;
 
     SDL_Renderer* renderer;
 
 public:
-    ScoreRenderer(SDL_Renderer* renderer, int fontSize, float x, float y, float w, float z) : fontSize(fontSize), renderer(renderer) {
+    ScoreRenderer() = default;
+    ScoreRenderer(SDL_Renderer* renderer) : renderer(renderer) {
+        if (FreePlayWorld::getCurrentScore() != nullptr) {
+            fontSize = 84;
+            scoreFont = TTF_OpenFont("font.ttf", fontSize);
+            if (scoreFont == NULL) {
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "ScoreRenderer: Failed to load font: %s", SDL_GetError());
+            }
+        }
+    }
 
+    void render() override {
+        if (stopRendering)
+            return;
+
+        if(FreePlayWorld::getCurrentScore() != nullptr) {
+            this->score = FreePlayWorld::getCurrentScore();
+
+            const char* scoreText = Utils::toString(score->getScore());
+            scoreSurface = TTF_RenderText_Solid(scoreFont, scoreText, sizeof(char)*10, {255, 255, 255});
+            delete[] scoreText;
+            if(scoreSurface == NULL)
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "ScoreRenderer: Failed to render text: %s", SDL_GetError());
+            else
+                SDL_Log("ScoreRenderer: Score surface created successfully!");
+
+            scoreTexture = SDL_CreateTextureFromSurface(renderer, scoreSurface);
+            if(scoreTexture == NULL)
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "ScoreRenderer: Failed to create texture: %s", SDL_GetError());
+            else
+                SDL_Log("ScoreRenderer: Score texture created successfully!");
+
+            float screen_w = FreePlayWorld::getScreenSize()->w;
+            float screen_h = FreePlayWorld::getScreenSize()->h;
+            score->getRect().setX(screen_w / 2 - scoreSurface->w / 2);
+            score->getRect().setY(screen_h - 16);
+            score->getRect().setW(scoreSurface->w);
+            score->getRect().setH(scoreSurface->h);
+
+            scoreRect = {
+                    score->getRect().x,
+                    score->getRect().y,
+                    score->getRect().w,
+                    score->getRect().h
+            };
+
+            CoordinatesMediator::SDL_ConvertCoordinatesForRendering(scoreRect, screen_h);
+            SDL_RenderTexture(renderer, scoreTexture, NULL, &scoreRect);
+
+            SDL_DestroySurface(scoreSurface); scoreSurface = nullptr;
+            SDL_DestroyTexture(scoreTexture); scoreTexture = nullptr;
+        }
+
+    }
+
+    void stop() override {
+        stopRendering = true;
+    }
+
+    void resume() override {
+        stopRendering = false;
+    }
+
+    void destroy() override {
+        score = nullptr; // The world will take care of deleting the score
+        if (scoreFont != NULL) {
+            TTF_CloseFont(scoreFont);
+        }
     }
 };
 

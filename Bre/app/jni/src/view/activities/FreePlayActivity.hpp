@@ -13,6 +13,7 @@
 #include "../../view/renderers/PlayerRenderer.hpp"
 #include "../../view/renderers/JoystickRenderer.hpp"
 #include "../../view/renderers/ClonesRenderer.hpp"
+#include "../../view/renderers/ScoreRenderer.hpp"
 #include "../../view/mediators/InputMediator.hpp"
 
 class FreePlayActivity {
@@ -30,6 +31,7 @@ class FreePlayActivity {
     PlayerRenderer playerRenderer;
     JoystickRenderer joystickRenderer;
     ClonesRenderer clonesRenderer;
+    ScoreRenderer scoreRenderer;
 
     // Mediators
     InputMediator inputMediator;
@@ -52,6 +54,7 @@ public:
         playerRenderer = PlayerRenderer(freePlayRenderer);
         joystickRenderer = JoystickRenderer(freePlayRenderer);
         clonesRenderer = ClonesRenderer(freePlayRenderer);
+        scoreRenderer = ScoreRenderer(freePlayRenderer);
     }
 
     void run() {
@@ -99,6 +102,7 @@ public:
             playerRenderer.render();
             joystickRenderer.render();
             clonesRenderer.render();
+            //scoreRenderer.render(); purtroppo crasha. Ritenterò con future versioni di SDL_TTF
             SDL_RenderPresent(freePlayRenderer);
 
         }
@@ -110,6 +114,7 @@ public:
         playerRenderer.destroy();
         joystickRenderer.destroy();
         clonesRenderer.destroy();
+        scoreRenderer.destroy();
         freePlayWorld.exit();
         SDL_DestroyRenderer(freePlayRenderer);
         SDL_DestroyWindow(freePlayWindow);

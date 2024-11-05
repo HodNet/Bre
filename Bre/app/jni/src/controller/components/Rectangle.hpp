@@ -52,6 +52,14 @@ struct Rectangle {
     void setY(float y) {
         this->y = y;
     }
+
+    void setW(float w) {
+        this->w = w;
+    }
+
+    void setH(float h) {
+        this->h = h;
+    }
 };
 
 

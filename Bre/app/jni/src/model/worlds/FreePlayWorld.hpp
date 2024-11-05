@@ -19,7 +19,7 @@ private:
 
     //Entities
     static std::map<int, Clone>* clones;
-    static Score* score;
+    static Score* currentScore;
 
     //Systems
     ClonesSystem clonesSystem;
@@ -29,7 +29,7 @@ public:
         if(!alreadyEntered) {
             GameWorld::enter(screen_w, screen_h);
             clones = new std::map<int, Clone>();
-            score = new Score();
+            currentScore = new Score();
             alreadyEntered = true;
         }
     }
@@ -37,7 +37,7 @@ public:
     void update() override {
         GameWorld::update();
         clonesSystem.updatePlayerPath(player, game);
-        clonesSystem.addCloneEveryTwoSeconds(clones, game, screenSize, score);
+        clonesSystem.addCloneEveryTwoSeconds(clones, game, screenSize, currentScore);
         clonesSystem.moveAllClones(clones);
         CollisionSystem::updatePlayerCloneCollisions(player, clones, game);
 
@@ -49,14 +49,14 @@ public:
     void reset() override {
         GameWorld::reset();
         clones->clear();
-        score->resetForGameOver();
+        currentScore->resetForGameOver();
         clonesSystem.reset();
     }
 
     void exit() override {
         GameWorld::exit();
         clones->clear();
-        delete score; score = nullptr;
+        delete currentScore; currentScore = nullptr;
         delete clones; clones = nullptr;
         clonesSystem.reset();
     }
@@ -65,8 +65,8 @@ public:
         return clones;
     }
 
-    static Score* getScore() {
-        return score;
+    static Score* getCurrentScore() {
+        return currentScore;
     }
 };
 
