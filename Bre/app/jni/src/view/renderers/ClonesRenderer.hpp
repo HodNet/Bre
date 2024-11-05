@@ -8,6 +8,7 @@
 #include <SDL3/SDL.h>
 
 #include "Renderer.hpp"
+#include "../../res/colors.hpp"
 #include "../../view/mediators/CoordinatesMediator.hpp"
 #include "../../model/entities/Clone.hpp"
 #include "../../model/worlds/FreePlayWorld.hpp"
@@ -44,7 +45,7 @@ public:
             };
             CoordinatesMediator::SDL_ConvertCoordinatesForRendering(cloneRect, FreePlayWorld::getScreenSize()->h);
 
-            SDL_SetRenderDrawColor(renderer, 204, 2, 2, 255);
+            SDL_SetRenderDrawColor(renderer, colors::red.r, colors::red.g, colors::red.b, colors::red.a);
             SDL_RenderFillRect(renderer, &cloneRect);
         }
     }

@@ -29,7 +29,7 @@ public:
         if(!alreadyEntered) {
             GameWorld::enter(screen_w, screen_h);
             clones = new std::map<int, Clone>();
-            currentScore = new Score();
+            currentScore = new Score(); //TODO: Retrivie highscore from local storage
             alreadyEntered = true;
         }
     }

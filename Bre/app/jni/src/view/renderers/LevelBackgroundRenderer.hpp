@@ -7,6 +7,7 @@
 
 #include <SDL3/SDL.h>
 #include "Renderer.hpp"
+#include "../../res/colors.hpp"
 
 class LevelBackgroundRenderer : public Renderer {
 
@@ -19,7 +20,7 @@ public:
     }
 
     void render() override {
-        SDL_SetRenderDrawColor(renderer, 39, 39, 39, 255);
+        SDL_SetRenderDrawColor(renderer, colors::background.r, colors::background.g, colors::background.b, colors::background.a);
         SDL_RenderClear(renderer);
     }
 

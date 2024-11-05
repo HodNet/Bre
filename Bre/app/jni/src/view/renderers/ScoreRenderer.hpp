@@ -9,6 +9,8 @@
 #include <SDL3_ttf/SDL_ttf.h>
 
 #include "Renderer.hpp"
+#include "../../res/colors.hpp"
+#include "../../res/dimens.hpp"
 #include "../../controller/utils/Utils.hpp"
 #include "../../model/entities/Score.hpp"
 
@@ -17,7 +19,6 @@ class ScoreRenderer : public Renderer {
 private:
     Score* score;
     bool stopRendering = false;
-    int fontSize = 24;
 
     SDL_FRect scoreRect;
     SDL_Surface* scoreSurface;
@@ -30,8 +31,7 @@ public:
     ScoreRenderer() = default;
     ScoreRenderer(SDL_Renderer* renderer) : renderer(renderer) {
         if (FreePlayWorld::getCurrentScore() != nullptr) {
-            fontSize = 84;
-            scoreFont = TTF_OpenFont("font.ttf", fontSize);
+            scoreFont = TTF_OpenFont("font.ttf", dimens::huge_title_font_size);
             if (scoreFont == NULL) {
                 SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "ScoreRenderer: Failed to load font: %s", SDL_GetError());
             }
@@ -46,7 +46,7 @@ public:
             this->score = FreePlayWorld::getCurrentScore();
 
             const char* scoreText = Utils::toString(score->getScore());
-            scoreSurface = TTF_RenderText_Solid(scoreFont, scoreText, sizeof(char)*10, {255, 255, 255});
+            scoreSurface = TTF_RenderText_Solid(scoreFont, scoreText, sizeof(char)*10, colors::white.toSDLColor());
             delete[] scoreText;
             if(scoreSurface == NULL)
                 SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "ScoreRenderer: Failed to render text: %s", SDL_GetError());

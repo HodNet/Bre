@@ -7,6 +7,7 @@
 
 #include <SDL3/SDL.h>
 #include "Renderer.hpp"
+#include "../../res/colors.hpp"
 #include "../../view/mediators/CoordinatesMediator.hpp"
 #include "../../model/entities/Player.hpp"
 #include "../../model/worlds/GameWorld.hpp"
@@ -39,7 +40,7 @@ public:
         };
         CoordinatesMediator::SDL_ConvertCoordinatesForRendering(playerRect, GameWorld::getScreenSize()->h);
 
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_SetRenderDrawColor(renderer, colors::white.r, colors::white.g, colors::white.b, colors::white.a);
         SDL_RenderFillRect(renderer, &playerRect);
     }
 

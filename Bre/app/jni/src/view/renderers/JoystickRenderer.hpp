@@ -9,6 +9,7 @@
 #include <SDL3_image/SDL_image.h>
 
 #include "Renderer.hpp"
+#include "../../res/strings.hpp"
 #include "../../view/mediators/CoordinatesMediator.hpp"
 #include "../../controller/components/Rectangle.hpp"
 #include "../../model/entities/Arrow.hpp"
@@ -37,9 +38,9 @@ private:
 public:
     JoystickRenderer() = default;
     JoystickRenderer(SDL_Renderer *renderer) : renderer(renderer) {
-        TXRcenter = IMG_LoadTexture(renderer, "center_arrow.png");
-        TXRbody = IMG_LoadTexture(renderer, "body_arrow.png");
-        TXRtip = IMG_LoadTexture(renderer, "tip_arrow.png");
+        TXRcenter = IMG_LoadTexture(renderer, strings::joystick_center);
+        TXRbody = IMG_LoadTexture(renderer, strings::joystick_body);
+        TXRtip = IMG_LoadTexture(renderer, strings::joystick_tip);
         if (TXRcenter == NULL || TXRbody == NULL || TXRtip == NULL)
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "JoystickRenderer: Failed to load textures: %s", SDL_GetError());
     }
