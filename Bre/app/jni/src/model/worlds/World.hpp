@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "../../controller/components/Rectangle.hpp"
-#include "../../model/entities/TouchInput.hpp"
+#include "../../controller/components/TouchInput.hpp"
 
 /**
  * This classes are static containers of all the entities in the world of a game.

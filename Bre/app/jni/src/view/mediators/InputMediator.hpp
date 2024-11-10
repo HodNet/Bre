@@ -5,7 +5,7 @@
 #ifndef BRE_INPUTMEDIATOR_HPP
 #define BRE_INPUTMEDIATOR_HPP
 
-#include "../../model/entities/TouchInput.hpp"
+#include "../../controller/components/TouchInput.hpp"
 #include "../../view/mediators/CoordinatesMediator.hpp"
 
 class InputMediator {

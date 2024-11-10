@@ -5,7 +5,7 @@
 #ifndef BRE_INGAMEINPUTSYSTEM_HPP
 #define BRE_INGAMEINPUTSYSTEM_HPP
 
-#include "../../model/entities/TouchInput.hpp"
+#include "../../controller/components/TouchInput.hpp"
 #include "../../controller/systems/InGameEventSystem.hpp"
 
 class InGameInputSystem {

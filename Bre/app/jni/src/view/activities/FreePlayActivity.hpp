@@ -7,7 +7,7 @@
 
 #include <SDL3/SDL.h>
 
-#include "../../model/entities/TouchInput.hpp"
+#include "../../controller/components/TouchInput.hpp"
 #include "../../model/worlds/FreePlayWorld.hpp"
 #include "../../view/mediators/InputMediator.hpp"
 #include "../../view/renderers/LevelBackgroundRenderer.hpp"
