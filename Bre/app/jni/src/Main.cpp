@@ -18,6 +18,7 @@ Player* GameWorld::player = nullptr;
 Arrow* GameWorld::joystick = nullptr;
 std::map<int, Clone>* FreePlayWorld::clones = nullptr;
 Score* FreePlayWorld::currentScore = nullptr;
+IconButton* GameWorld::pauseButton = nullptr;
 
 class Main {
 
@@ -67,6 +68,8 @@ public:
         const SDL_DisplayMode* screen = SDL_GetCurrentDisplayMode(*displays);
         if (screen == NULL) {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_GetCurrentDisplayMode failed (%s)", SDL_GetError());
+            TTF_Quit();
+            IMG_Quit();
             SDL_Quit();
             return 1;
         } else

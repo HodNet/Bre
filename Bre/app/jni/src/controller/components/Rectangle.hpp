@@ -18,7 +18,7 @@ struct Rectangle {
     float Ymax() const { return y + h; }
 
     Rectangle() : x(0), y(0), w(0), h(0) {}
-    Rectangle(float x, float y, float w, float h) : x(x), y(y), w(w), h(h) {}
+    Rectangle(const float x, const float y, const float w, const float h) : x(x), y(y), w(w), h(h) {}
     Rectangle(const Rectangle& r) : x(r.x), y(r.y), w(r.w), h(r.h) {}
 
     Rectangle& operator=(const Rectangle& r) {
@@ -33,7 +33,7 @@ struct Rectangle {
         return p.x >= Xmin() && p.x <= Xmax() && p.y >= Ymin() && p.y <= Ymax();
     }
 
-    bool contains(float x, float y) const {
+    bool contains(const float x, const float y) const {
         return x >= Xmin() && x <= Xmax() && y >= Ymin() && y <= Ymax();
     }
 
@@ -45,19 +45,19 @@ struct Rectangle {
         return Xmin() < r.Xmax() && Xmax() > r.Xmin() && Ymin() < r.Ymax() && Ymax() > r.Ymin();
     }
 
-    void setX(float x) {
+    void setX(const float x) {
         this->x = x;
     }
 
-    void setY(float y) {
+    void setY(const float y) {
         this->y = y;
     }
 
-    void setW(float w) {
+    void setW(const float w) {
         this->w = w;
     }
 
-    void setH(float h) {
+    void setH(const float h) {
         this->h = h;
     }
 };

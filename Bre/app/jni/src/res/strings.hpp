@@ -5,16 +5,11 @@
 #ifndef BRE_STRINGS_HPP
 #define BRE_STRINGS_HPP
 
-#include <string_view>
+#include <string>
 
 namespace strings {
 
-    constexpr const std::string_view app_name = "BRE";
-
-    // File names
-    constexpr const char* joystick_center = "center_arrow.png";
-    constexpr const char* joystick_body = "body_arrow.png";
-    constexpr const char* joystick_tip = "tip_arrow.png";
+    const std::string app_name = "BRE";
 
 }
 

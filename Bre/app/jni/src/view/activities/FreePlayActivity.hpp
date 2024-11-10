@@ -9,17 +9,16 @@
 
 #include "../../model/entities/TouchInput.hpp"
 #include "../../model/worlds/FreePlayWorld.hpp"
+#include "../../view/mediators/InputMediator.hpp"
 #include "../../view/renderers/LevelBackgroundRenderer.hpp"
 #include "../../view/renderers/PlayerRenderer.hpp"
 #include "../../view/renderers/JoystickRenderer.hpp"
 #include "../../view/renderers/ClonesRenderer.hpp"
 #include "../../view/renderers/ScoreRenderer.hpp"
-#include "../../view/mediators/InputMediator.hpp"
+#include "../../view/renderers/IconButtonRenderer.hpp"
 
 class FreePlayActivity {
 
-    bool playing = false;
-    bool developer_mode = false;
     FreePlayWorld freePlayWorld;
 
     const SDL_DisplayMode* screen;
@@ -32,6 +31,7 @@ class FreePlayActivity {
     JoystickRenderer joystickRenderer;
     ClonesRenderer clonesRenderer;
     ScoreRenderer scoreRenderer;
+    IconButtonRenderer pauseButtonRenderer;
 
     // Mediators
     InputMediator inputMediator;
@@ -50,48 +50,61 @@ public:
             //TODO: Get back to main menu
         }
 
+        freePlayWorld.enter(screen->w, screen->h);
+
         levelBackgroundRenderer = LevelBackgroundRenderer(freePlayRenderer);
         playerRenderer = PlayerRenderer(freePlayRenderer);
         joystickRenderer = JoystickRenderer(freePlayRenderer);
         clonesRenderer = ClonesRenderer(freePlayRenderer);
         scoreRenderer = ScoreRenderer(freePlayRenderer);
+        pauseButtonRenderer = IconButtonRenderer(freePlayWorld.getPauseButton(), freePlayRenderer);
+
+        freePlayWorld.getPauseButton()->setOnClickListener([&](){
+            freePlayWorld.getGame()->pause();
+        });
     }
 
     void run() {
-        playing = true;
-        freePlayWorld.enter(screen->w, screen->h);
 
-        while (playing) {
+        while (true) {
             SDL_Event e;
+
             if(SDL_PollEvent(&e)) {
                 SDL_Log("Event type: %d", e.type);
 
-                if(e.type == SDL_EVENT_QUIT) {
-                    playing = false;
+                if (e.type == SDL_EVENT_QUIT) {
+                    exit();
                     break;
                 }
 
                 TouchInput* touchInput = inputMediator.SDL_GetTouchInput(e, screen->w, screen->h);
 
-                //Handle rendering for first finger
-                if(touchInput->fingerID==1) {
-                    switch (touchInput->type) {
-                        case TouchInputType::SCREEN_TOUCH:
-                            joystickRenderer.buildCenter(touchInput->x, touchInput->y);
-                            break;
-                        case TouchInputType::SCREEN_SCROLL:
-                            joystickRenderer.buildEntireArrow(touchInput->x, touchInput->y);
-                            break;
-                        case TouchInputType::SCREEN_RELEASE:
-                            joystickRenderer.stop();
-                            break;
-                        case TouchInputType::SCREEN_TAP:
-                            joystickRenderer.stop();
-                            break;
-                    }
+                SDL_Log("Game state: %d", freePlayWorld.getGame()->getState());
+                switch (freePlayWorld.getGame()->getState()) {
+                    case GameState::PAUSED:
+                        //TODO
+                        break;
+                    default:
+                        //Handle rendering for first finger
+                        if(touchInput->fingerID==1) {
+                            switch (touchInput->type) {
+                                case TouchInputType::SCREEN_TOUCH:
+                                    joystickRenderer.buildCenter(touchInput->x, touchInput->y);
+                                    break;
+                                case TouchInputType::SCREEN_SCROLL:
+                                    joystickRenderer.buildEntireArrow(touchInput->x, touchInput->y);
+                                    break;
+                                case TouchInputType::SCREEN_RELEASE:
+                                    joystickRenderer.stop();
+                                    break;
+                                case TouchInputType::SCREEN_TAP:
+                                    joystickRenderer.stop();
+                                    break;
+                            }
+                        }
+                        break;
                 }
 
-                //Handle logic
                 freePlayWorld.handleInput(touchInput);
             }
 
@@ -103,18 +116,18 @@ public:
             joystickRenderer.render();
             clonesRenderer.render();
             //scoreRenderer.render(); purtroppo crasha. Ritenterò con future versioni di SDL_TTF
+            pauseButtonRenderer.render();
             SDL_RenderPresent(freePlayRenderer);
-
         }
     }
 
     void exit() {
-        playing = false;
         levelBackgroundRenderer.destroy();
         playerRenderer.destroy();
         joystickRenderer.destroy();
         clonesRenderer.destroy();
         scoreRenderer.destroy();
+        pauseButtonRenderer.destroy();
         freePlayWorld.exit();
         SDL_DestroyRenderer(freePlayRenderer);
         SDL_DestroyWindow(freePlayWindow);

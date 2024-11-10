@@ -14,6 +14,8 @@ private:
     StopWatch timer;
     GameState state;
 
+    GameState previousState;
+
 public:
     Game() : timer(TimeUnit::MILLISECONDS), state(GameState::NOT_STARTED) {}
 
@@ -25,16 +27,15 @@ public:
     }
 
     void pause() {
-        if (state == GameState::PLAYING) {
-            timer.stop();
-            state = GameState::PAUSED;
-        }
+        timer.stop();
+        previousState = state;
+        state = GameState::PAUSED;
     }
 
     void resume() {
         if (state == GameState::PAUSED) {
             timer.resume();
-            state = GameState::PLAYING;
+            state = previousState;
         }
     }
 

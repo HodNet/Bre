@@ -20,7 +20,7 @@ public:
         if(rect.y<0 || rect.y>screen_height)
             return;
 
-        rect.y = screen_height - rect.y;
+        rect.y = screen_height - rect.y - rect.h;
     }
 
     static void SDL_ConvertAngleForRendering(double &angle) {

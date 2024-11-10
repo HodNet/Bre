@@ -29,20 +29,22 @@ public:
         if(!alreadyEntered) {
             GameWorld::enter(screen_w, screen_h);
             clones = new std::map<int, Clone>();
-            currentScore = new Score(); //TODO: Retrivie highscore from local storage
+            currentScore = new Score(); //TODO: Retrieve highScore from local storage
             alreadyEntered = true;
         }
     }
 
     void update() override {
-        GameWorld::update();
-        clonesSystem.updatePlayerPath(player, game);
-        clonesSystem.addCloneEveryTwoSeconds(clones, game, screenSize, currentScore);
-        clonesSystem.moveAllClones(clones);
-        CollisionSystem::updatePlayerCloneCollisions(player, clones, game);
+        if(game->getState() != GameState::PAUSED) {
+            GameWorld::update();
+            clonesSystem.updatePlayerPath(player, game);
+            clonesSystem.addCloneEveryTwoSeconds(clones, game, screenSize, currentScore);
+            clonesSystem.moveAllClones(clones);
+            CollisionSystem::updatePlayerCloneCollisions(player, clones, game);
 
-        if(game->getState() == GameState::GAME_OVER) {
-            reset();
+            if (game->getState() == GameState::GAME_OVER) {
+                reset();
+            }
         }
     }
 

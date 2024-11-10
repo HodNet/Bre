@@ -7,19 +7,29 @@
 
 namespace dimens {
 
-    // Margins following the Android guidelines
-    constexpr const float horizontal_margin = 16;
-    constexpr const float vertical_margin = 16;
+    // Margins according to the Android guidelines
+    constexpr float horizontal_margin = 16;
+    constexpr float vertical_margin = 16;
+
+    // sizes according to the Android documentation
+    constexpr float navigation_bar_height = 48;
 
     // font sizes
-    constexpr const int small_text_font_size = 14;
-    constexpr const int medium_text_font_size = 18;
-    constexpr const int large_text_font_size = 24;
-    constexpr const int small_title_font_size = 30;
-    constexpr const int medium_title_font_size = 36;
-    constexpr const int large_title_font_size = 48;
-    constexpr const int extra_large_title_font_size = 60;
-    constexpr const int huge_title_font_size = 84;
+    constexpr int small_text_font_size = 14;
+    constexpr int medium_text_font_size = 18;
+    constexpr int large_text_font_size = 24;
+    constexpr int small_title_font_size = 30;
+    constexpr int medium_title_font_size = 36;
+    constexpr int large_title_font_size = 48;
+    constexpr int extra_large_title_font_size = 60;
+    constexpr int huge_title_font_size = 84;
+
+    // file images sizes
+    constexpr int pause_button_file_width = 256;
+    constexpr int pause_button_file_height = 256;
+
+    // button sizes
+    constexpr int icon_button_size = 96;
 
 }
 

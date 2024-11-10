@@ -9,7 +9,7 @@
 #include <SDL3_image/SDL_image.h>
 
 #include "Renderer.hpp"
-#include "../../res/strings.hpp"
+#include "../../res/images.hpp"
 #include "../../view/mediators/CoordinatesMediator.hpp"
 #include "../../controller/components/Rectangle.hpp"
 #include "../../model/entities/Arrow.hpp"
@@ -19,7 +19,7 @@
 class JoystickRenderer : public Renderer {
 
 private:
-    Arrow* joystick;
+    Arrow* joystick = nullptr;
     bool stopRendering = false;
     double angle;
 
@@ -38,11 +38,15 @@ private:
 public:
     JoystickRenderer() = default;
     JoystickRenderer(SDL_Renderer *renderer) : renderer(renderer) {
-        TXRcenter = IMG_LoadTexture(renderer, strings::joystick_center);
-        TXRbody = IMG_LoadTexture(renderer, strings::joystick_body);
-        TXRtip = IMG_LoadTexture(renderer, strings::joystick_tip);
-        if (TXRcenter == NULL || TXRbody == NULL || TXRtip == NULL)
+        TXRcenter = IMG_LoadTexture(renderer, images::joystick_center);
+        TXRbody = IMG_LoadTexture(renderer, images::joystick_body);
+        TXRtip = IMG_LoadTexture(renderer, images::joystick_tip);
+        if (TXRcenter == NULL || TXRbody == NULL || TXRtip == NULL) {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "JoystickRenderer: Failed to load textures: %s", SDL_GetError());
+            TXRcenter = IMG_LoadTexture(renderer, images::not_found);
+            TXRbody = IMG_LoadTexture(renderer, images::not_found);
+            TXRtip = IMG_LoadTexture(renderer, images::not_found);
+        }
     }
 
     /**
