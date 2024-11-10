@@ -14,6 +14,7 @@ namespace colors {
     const Color dark_gray = Color("#282828");
     const Color black = Color("#141414");
 
+
     const Color primary = Color("#FF6200EE");
     const Color primary_variant = Color("#FF3700B3");
     const Color secondary = Color("#FF03DAC5");
@@ -26,6 +27,7 @@ namespace colors {
     const Color on_background = Color("#FF000000");
     const Color on_surface = Color("#FF000000");
     const Color on_error = Color("#FFFFFFFF");
+    const Color on_pressed = Color(95, 95, 95, 95);
 
 }
 

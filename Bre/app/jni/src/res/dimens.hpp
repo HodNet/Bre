@@ -29,7 +29,7 @@ namespace dimens {
     constexpr int pause_button_file_height = 256;
 
     // button sizes
-    constexpr int icon_button_size = 96;
+    constexpr int icon_button_size = 112;
 
 }
 

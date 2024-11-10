@@ -51,7 +51,7 @@ public:
 
     void handleInput(TouchInput* touchInput) override {
         inGameInputSystem.handleInput(touchInput);
-        pauseButton->handleInput(touchInput->x, touchInput->y);
+        pauseButton->handleInput(touchInput);
     }
 
     virtual void update() override {

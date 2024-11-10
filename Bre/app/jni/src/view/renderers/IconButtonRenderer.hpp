@@ -42,10 +42,14 @@ public:
     }
 
     void render() override {
-        if (stopRendering) {
+        if (stopRendering || button == nullptr || texture == nullptr) {
             return;
         }
 
+        if(button->isPressed()) {
+            SDL_SetRenderDrawColor(renderer, colors::on_pressed.r, colors::on_pressed.g, colors::on_pressed.b, colors::on_pressed.a);
+            SDL_RenderFillRect(renderer, &dstRect);
+        }
         SDL_RenderTexture(renderer, texture, &srcRect, &dstRect);
     }
 

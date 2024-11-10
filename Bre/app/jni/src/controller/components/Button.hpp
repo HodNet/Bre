@@ -23,8 +23,12 @@ private:
 
 public:
     Button() = default;
-    Button(const Button& b) : Rectangle(b), pressed(b.pressed), text(b.text), timer(b.timer), onClick(b.onClick), onLongClick(b.onLongClick) {}
+    Button(const Button& b) = default;
     Button(const float x, const float y, const float w, const float h) : Rectangle(x, y, w, h) {}
+
+    bool isPressed() const {
+        return pressed;
+    }
 
     bool isClicked(const float x, const float y) const {
         return contains(x, y);
@@ -34,9 +38,15 @@ public:
         return pressed && contains(x, y) && timer.now() > LONG_CLICK_DURATION;
     }
 
-    void handleInput(const float x, const float y) {
+    void handleInput(const TouchInput* touchInput) {
+        if (touchInput == nullptr)
+            return;
+
+        const float x = touchInput->x;
+        const float y = touchInput->y;
+
         if (isClicked(x, y)) {
-            if(!pressed) {
+            if (!pressed) {
                 timer.start();
                 pressed = true;
             }
@@ -44,14 +54,21 @@ public:
             if (pressed) {
                 pressed = false;
                 timer.stop();
-                if (timer.now() <= LONG_CLICK_DURATION) {
-                    onClick();
-                }
             }
         }
 
         if (isClickedForLong(x, y)) {
             onLongClick();
+        }
+
+        if (touchInput->type == TouchInputType::SCREEN_RELEASE || touchInput->type == TouchInputType::SCREEN_TAP) {
+            if(pressed) {
+                pressed = false;
+                timer.stop();
+                if (timer.now() <= LONG_CLICK_DURATION) {
+                    onClick();
+                }
+            }
         }
     }
 
