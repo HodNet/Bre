@@ -31,6 +31,9 @@ namespace dimens {
     // button sizes
     constexpr int icon_button_size = 112;
 
+    // pause dialog sizes
+    constexpr int pause_dialog_gradient_animation_height = 248;
+
 }
 
 #endif //BRE_DIMENS_HPP

@@ -9,6 +9,7 @@
 
 namespace colors {
 
+    const Color transparent = Color(0, 0, 0, 0);
     const Color white = Color("#FFFFFFFF");
     const Color red = Color("#C80815");
     const Color dark_gray = Color("#282828");
