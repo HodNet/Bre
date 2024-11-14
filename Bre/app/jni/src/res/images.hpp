@@ -13,6 +13,8 @@ namespace images {
     constexpr const char* joystick_body = "body_arrow.png";
     constexpr const char* joystick_tip = "tip_arrow.png";
     constexpr const char* pause_button = "pausa.png";
+    constexpr const char* button_background = "button_background.png";
+    constexpr const char* menu_background = "menu_background.png";
 
 }
 

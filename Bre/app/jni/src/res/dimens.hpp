@@ -27,12 +27,16 @@ namespace dimens {
     // file images sizes
     constexpr int pause_button_file_width = 256;
     constexpr int pause_button_file_height = 256;
+    constexpr int pause_menu_background_file_width = 716;
+    constexpr int pause_menu_background_file_height = 716;
 
     // button sizes
     constexpr int icon_button_size = 112;
 
     // pause dialog sizes
     constexpr int pause_dialog_gradient_animation_height = 248;
+    constexpr int pause_menu_background_width = 784;
+    constexpr int pause_menu_background_height = 1344;
 
 }
 

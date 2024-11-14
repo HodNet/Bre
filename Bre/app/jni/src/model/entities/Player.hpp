@@ -22,8 +22,8 @@ class Player {
                 screen_w/20,
                 screen_w/20
         ), initialPosition(
-                screen_w/2 - screen_w/20/2,
-                screen_h/2 - screen_w/20/2
+                screen_w/2.0f - screen_w/20.0f/2.0f,
+                screen_h/2.0f - screen_w/20.0f/2.0f
         ) {
         state = PlayerState::IDLE;
     }
