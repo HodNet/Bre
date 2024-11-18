@@ -5,8 +5,6 @@
 #ifndef BRE_WORLD_HPP
 #define BRE_WORLD_HPP
 
-#include <vector>
-
 #include "../../controller/components/Rectangle.hpp"
 #include "../../controller/components/TouchInput.hpp"
 
@@ -30,12 +28,14 @@ public:
      * This function should set the screen size and initialize all the entities in the world.
      */
     virtual void enter(unsigned int screen_w, unsigned int screen_h) {
-        setScreenSize(screen_w, screen_h);
+        screenSize = new Rectangle(0, 0, screen_w, screen_h);
     }
 
     /**
      * Should be called when the player is in the world and has touched the screen.
      * This function should handle the input of the player.
+     * WARNING: delete touchInput; should be called at the end of the function.
+     * @param touchInput the input. delete it at the end of the function.
      */
     virtual void handleInput(TouchInput* touchInput) = 0;
 
@@ -49,14 +49,20 @@ public:
      * Should be called when the player is leaving the world.
      * This function should destroy all the entities in the world.
      */
-    virtual void exit() = 0;
-
-    static void setScreenSize(unsigned int w, unsigned int h) {
-        screenSize = new Rectangle(0, 0, w, h);
+    virtual void exit() {
+        delete screenSize; screenSize = nullptr;
     }
 
     static const Rectangle* getScreenSize() {
         return screenSize;
+    }
+
+    static float getScreenW() {
+        return screenSize->w;
+    }
+
+    static float getScreenH() {
+        return screenSize->h;
     }
 };
 

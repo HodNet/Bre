@@ -34,7 +34,8 @@ public:
 
     void resume() {
         if (state == GameState::PAUSED) {
-            timer.resume();
+            if(previousState != GameState::NOT_STARTED)
+                timer.resume();
             state = previousState;
         }
     }

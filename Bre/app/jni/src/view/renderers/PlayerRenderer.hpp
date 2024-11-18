@@ -13,7 +13,7 @@
 #include "../../model/worlds/GameWorld.hpp"
 
 
-class PlayerRenderer : public Renderer {
+class PlayerRenderer : virtual public Renderer {
 
     Player* player;
     bool stopRendering = false;

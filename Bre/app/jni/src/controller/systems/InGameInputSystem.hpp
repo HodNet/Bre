@@ -34,8 +34,6 @@ public:
                     break;
             }
         }
-
-        delete touchInput;
     }
 
     void reset() {

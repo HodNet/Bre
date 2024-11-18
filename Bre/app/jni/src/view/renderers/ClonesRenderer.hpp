@@ -13,7 +13,7 @@
 #include "../../model/entities/Clone.hpp"
 #include "../../model/worlds/FreePlayWorld.hpp"
 
-class ClonesRenderer : public Renderer {
+class ClonesRenderer : virtual public Renderer {
 
 private:
     std::map<int, Clone>* clones;

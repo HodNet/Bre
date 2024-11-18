@@ -14,7 +14,6 @@ class Button : public Rectangle {
 
 private:
     bool pressed = false;
-    std::string text = "";
     StopWatch timer = StopWatch(TimeUnit::MILLISECONDS);
     std::function<void()> onClick = [](){};
     std::function<void()> onLongClick = [](){};

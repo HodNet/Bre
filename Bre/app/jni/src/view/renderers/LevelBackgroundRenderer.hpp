@@ -9,7 +9,7 @@
 #include "Renderer.hpp"
 #include "../../res/colors.hpp"
 
-class LevelBackgroundRenderer : public Renderer {
+class LevelBackgroundRenderer : virtual public Renderer {
 
     SDL_Renderer* renderer;
 

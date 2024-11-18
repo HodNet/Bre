@@ -10,7 +10,7 @@
 namespace colors {
 
     const Color transparent = Color(0, 0, 0, 0);
-    const Color semi_transparent_white = Color(95, 95, 95, 95);
+    const Color semi_transparent_white = Color(225, 225, 225, 125);
     const Color white = Color("#FFFFFFFF");
     const Color red = Color("#C81028");
     const Color dark_red = Color("#7C0A02");
@@ -27,6 +27,8 @@ namespace colors {
     const Color danger = dark_red;
     const Color on_error = dark_red;
     const Color on_pressed = semi_transparent_white;
+
+    const Color font = white;
 
 }
 

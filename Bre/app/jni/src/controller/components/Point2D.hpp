@@ -26,6 +26,14 @@ struct Point2D {
         y = p.y;
         return *this;
     }
+
+    void setX(const float x) {
+        this->x = x;
+    }
+
+    void setY(const float y) {
+        this->y = y;
+    }
 };
 
 #endif //BRE_POINT2D_HPP

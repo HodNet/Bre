@@ -11,6 +11,8 @@ namespace strings {
 
     const std::string app_name = "BRE";
 
+    constexpr const char* pause_menu_title = "PAUSE";
+
 }
 
 #endif //BRE_STRINGS_HPP

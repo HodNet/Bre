@@ -5,22 +5,22 @@
 #ifndef BRE_SCORE_HPP
 #define BRE_SCORE_HPP
 
-#include "../../controller/components/Rectangle.hpp"
+#include "../../model/worlds/World.hpp"
+#include "../../controller/components/Text.hpp"
 
-class Score {
-    Rectangle rect; //position and size
-    int score;
-    int highScore;
+class Score : public Text {
+    int score = 0;
+    int highScore = 0;
 
 public:
-    Score() : rect(Rectangle(0, 0, 0, 0)), score(0), highScore(0) {}
-    Score(Rectangle rect, int highScore) : rect(rect), score(0), highScore(highScore) {}
-
-    void setRect(int x, int y, int w, int h) {
-        rect.x = x;
-        rect.y = y;
-        rect.w = w;
-        rect.h = h;
+    Score() = default;
+    Score(int highScore) : Text(
+                World::getScreenW()/2,
+                World::getScreenH() - dimens::vertical_margin,
+                new char[10],
+                dimens::huge_title_font_size
+            ), score(0), highScore(highScore) {
+        sprintf(text, "%d", score);
     }
 
     void setScore(int score) {
@@ -35,20 +35,26 @@ public:
             highScore = score;
     }
 
-    int getScore() const {
+    int getValue() const {
         return score;
+    }
+
+    const char* getText() {
+        if(text != nullptr)
+            sprintf(text, "%d", score);
+        return text;
     }
 
     int getHighScore() const {
         return highScore;
     }
 
-    Rectangle getRect() const {
-        return rect;
-    }
-
     void resetForGameOver() {
         score = 0;
+    }
+
+    ~Score() {
+        delete[] text;
     }
 };
 

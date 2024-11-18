@@ -8,6 +8,7 @@
 #include <map>
 
 #include "GameWorld.hpp"
+#include "../../res/dimens.hpp"
 #include "../../controller/systems/ClonesSystem.hpp"
 #include "../../model/entities/Clone.hpp"
 #include "../../model/entities/Score.hpp"
@@ -29,9 +30,14 @@ public:
         if(!alreadyEntered) {
             GameWorld::enter(screen_w, screen_h);
             clones = new std::map<int, Clone>();
-            currentScore = new Score(); //TODO: Retrieve highScore from local storage
+            currentScore = new Score(0); //TODO: Retrieve highScore from local storage
             alreadyEntered = true;
         }
+    }
+
+    void handleInput(TouchInput* touchInput) override {
+        GameWorld::handleInput(touchInput);
+        delete touchInput;
     }
 
     void update() override {
@@ -46,6 +52,14 @@ public:
                 reset();
             }
         }
+    }
+
+    void pause() override {
+        GameWorld::pause();
+    }
+
+    void resume() override {
+        GameWorld::resume();
     }
 
     void reset() override {

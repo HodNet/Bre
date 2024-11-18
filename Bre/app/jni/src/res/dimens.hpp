@@ -25,16 +25,28 @@ namespace dimens {
     constexpr int huge_title_font_size = 84;
 
     // file images sizes
+    constexpr int not_found_file_width = 300;
+    constexpr int not_found_file_height = 300;
+    constexpr int button_background_file_width = 716;
+    constexpr int button_background_file_height = 716;
     constexpr int pause_button_file_width = 256;
     constexpr int pause_button_file_height = 256;
     constexpr int pause_menu_background_file_width = 716;
     constexpr int pause_menu_background_file_height = 716;
+    constexpr int resume_button_file_width = 96;
+    constexpr int resume_button_file_height = 96;
+    constexpr int restart_button_file_width = 144;
+    constexpr int restart_button_file_height = 144;
+    constexpr int exit_button_file_width = 96;
+    constexpr int exit_button_file_height = 96;
+    constexpr int cancel_button_file_width = 480;
+    constexpr int cancel_button_file_height = 480;
 
     // button sizes
-    constexpr int icon_button_size = 112;
+    constexpr int small_icon_button_size = 112;
+    constexpr int large_icon_button_size = 224;
 
     // pause dialog sizes
-    constexpr int pause_dialog_gradient_animation_height = 248;
     constexpr int pause_menu_background_width = 784;
     constexpr int pause_menu_background_height = 1344;
 

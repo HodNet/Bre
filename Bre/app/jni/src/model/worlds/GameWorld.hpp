@@ -40,16 +40,19 @@ public:
         game = new Game();
         player = Player::getInstance(screen_w, screen_h);
         pauseButton = new IconButton(
-                screen_w - dimens::horizontal_margin - dimens::icon_button_size,
-                screen_h - dimens::vertical_margin - dimens::icon_button_size - dimens::navigation_bar_height,
-                dimens::icon_button_size,
-                dimens::icon_button_size,
+                screen_w - dimens::horizontal_margin - dimens::small_icon_button_size,
+                screen_h - dimens::vertical_margin - dimens::small_icon_button_size - dimens::navigation_bar_height,
+                dimens::small_icon_button_size,
+                dimens::small_icon_button_size,
                 images::pause_button,
                 dimens::pause_button_file_width,
                 dimens::pause_button_file_height);
+        pauseButton->setOnClickListener([&](){
+            pause();
+        });
     }
 
-    void handleInput(TouchInput* touchInput) override {
+    virtual void handleInput(TouchInput* touchInput) override {
         inGameInputSystem.handleInput(touchInput);
         pauseButton->handleInput(touchInput);
     }
@@ -59,6 +62,16 @@ public:
         CollisionSystem::updatePlayerMapMarginsCollisions(player, screenSize, game);
     }
 
+    virtual void pause() {
+        game->pause();
+        movementSystem.pause();
+    }
+
+    virtual void resume() {
+        game->resume();
+        movementSystem.resume();
+    }
+
     virtual void reset() {
         player->reset();
         inGameInputSystem.reset();
@@ -66,12 +79,16 @@ public:
     }
 
     virtual void exit() override {
-        delete screenSize; screenSize = nullptr;
+        World::exit();
         delete game; game = nullptr;
         delete player; player = nullptr;
         delete joystick; joystick = nullptr;
         delete pauseButton; pauseButton = nullptr;
         inGameInputSystem.reset();
+    }
+
+    bool isPaused() {
+        return game->getState() == GameState::PAUSED;
     }
 
     static Player* getPlayer() {

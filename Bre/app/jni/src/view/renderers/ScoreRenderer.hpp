@@ -14,7 +14,7 @@
 #include "../../controller/utils/Utils.hpp"
 #include "../../model/entities/Score.hpp"
 
-class ScoreRenderer : public Renderer {
+class ScoreRenderer : virtual public Renderer {
 
 private:
     Score* score;
@@ -31,7 +31,7 @@ public:
     ScoreRenderer() = default;
     ScoreRenderer(SDL_Renderer* renderer) : renderer(renderer) {
         if (FreePlayWorld::getCurrentScore() != nullptr) {
-            scoreFont = TTF_OpenFont("font.ttf", dimens::huge_title_font_size);
+            scoreFont = TTF_OpenFont("RasterInfo.ttf", dimens::huge_title_font_size);
             if (scoreFont == NULL) {
                 SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "ScoreRenderer: Failed to load font: %s", SDL_GetError());
             }
@@ -45,9 +45,7 @@ public:
         if(FreePlayWorld::getCurrentScore() != nullptr) {
             this->score = FreePlayWorld::getCurrentScore();
 
-            const char* scoreText = Utils::toString(score->getScore());
-            scoreSurface = TTF_RenderText_Solid(scoreFont, scoreText, sizeof(char)*10, colors::white.toSDLColor());
-            delete[] scoreText;
+            scoreSurface = TTF_RenderText_Solid(scoreFont, score->getText(), score->getLength(), colors::font.toSDLColor());
             if(scoreSurface == NULL)
                 SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "ScoreRenderer: Failed to render text: %s", SDL_GetError());
             else
@@ -61,23 +59,25 @@ public:
 
             float screen_w = FreePlayWorld::getScreenSize()->w;
             float screen_h = FreePlayWorld::getScreenSize()->h;
-            score->getRect().setX(screen_w / 2 - scoreSurface->w / 2);
-            score->getRect().setY(screen_h - dimens::vertical_margin);
-            score->getRect().setW(scoreSurface->w);
-            score->getRect().setH(scoreSurface->h);
+            score->setX(screen_w/2 - scoreSurface->w/2);
+            score->setY(screen_h - scoreSurface->h - dimens::vertical_margin);
 
             scoreRect = {
-                    score->getRect().x,
-                    score->getRect().y,
-                    score->getRect().w,
-                    score->getRect().h
+                    static_cast<float>(score->x),
+                    static_cast<float>(score->y),
+                    static_cast<float>(scoreSurface->w),
+                    static_cast<float>(scoreSurface->h)
             };
 
             CoordinatesMediator::SDL_ConvertCoordinatesForRendering(scoreRect, screen_h);
             SDL_RenderTexture(renderer, scoreTexture, NULL, &scoreRect);
 
-            SDL_DestroySurface(scoreSurface); scoreSurface = nullptr;
-            SDL_DestroyTexture(scoreTexture); scoreTexture = nullptr;
+            if(scoreSurface != nullptr && scoreTexture != nullptr) {
+                SDL_DestroySurface(scoreSurface);
+                SDL_DestroyTexture(scoreTexture);
+                scoreSurface = nullptr;
+                scoreTexture = nullptr;
+            }
         }
 
     }

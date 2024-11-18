@@ -28,8 +28,8 @@ public:
         }
     }
 
-    static void updatePlayerMapMarginsCollisions(const Player* player, const Rectangle* screenSize, Game* game) {
-        if(!screenSize->contains(player->getRect())) {
+    static void updatePlayerMapMarginsCollisions(const Player* player, const Rectangle* mapSize, Game* game) {
+        if(!mapSize->contains(player->getRect())) {
             game->over();
         }
     }

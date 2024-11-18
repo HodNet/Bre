@@ -6,19 +6,33 @@
 #include <SDL3_image/SDL_image.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <vector>
+#include "model/worlds/PauseMenuSubWorld.hpp"
 #include "view/activities/FreePlayActivity.hpp"
 
 // Singleton declarations
 Player* Player::instance = nullptr;
 
+
 // Static objects declarations
 const Rectangle* World::screenSize = nullptr;
+
 Game* GameWorld::game = nullptr;
 Player* GameWorld::player = nullptr;
 Arrow* GameWorld::joystick = nullptr;
+IconButton* GameWorld::pauseButton = nullptr;
+
 std::map<int, Clone>* FreePlayWorld::clones = nullptr;
 Score* FreePlayWorld::currentScore = nullptr;
-IconButton* GameWorld::pauseButton = nullptr;
+
+Transition_VerticalOscillation* PauseMenuSubWorld::enterTransition = nullptr;
+DisplacementAnimation* PauseMenuSubWorld::exitTransition = nullptr;
+Text* PauseMenuSubWorld::title = nullptr;
+Image* PauseMenuSubWorld::background = nullptr;
+IconButton* PauseMenuSubWorld::resumeButton = nullptr;
+IconButton* PauseMenuSubWorld::restartButton = nullptr;
+IconButton* PauseMenuSubWorld::exitButton = nullptr;
+IconButton* PauseMenuSubWorld::cancelButton = nullptr;
+
 
 class Main {
 

@@ -18,6 +18,12 @@ class MovementSystem {
 public:
     MovementSystem() = default;
 
+    /**
+     * Moves the player according to the joystick's direction
+     * Must be called every frame
+     * @param player the player to move
+     * @param joystick the joystick that controls the player
+     */
     void movePlayer(Player* player, Arrow* joystick) {
         if(player->getState() == PlayerState::MOVING) {
             float x0 = player->getRect().x;
@@ -34,6 +40,14 @@ public:
         }
 
         frameTimer.start();
+    }
+
+    void pause() {
+        frameTimer.stop();
+    }
+
+    void resume() {
+        frameTimer.resume();
     }
 
 };

@@ -8,7 +8,7 @@
 class Renderer {
 public:
     /**
-     * Should be called any time you want the render the object.
+     * Should be called at any frame you want to render the object.
      */
     virtual void render() = 0;
 

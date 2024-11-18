@@ -27,6 +27,9 @@ public:
     StopWatch(TimeUnit timeUnit = TimeUnit::MILLISECONDS) : timeUnit(timeUnit) {}
 
     void resume() {
+        if(running) return; // Do nothing if already running
+        if(time_until_last_stop == 0) return; // If it's the first time it's running
+
         begin = steady_clock::now();
         running = true;
     }
@@ -75,7 +78,8 @@ public:
 
     void start() {
         reset();
-        resume();
+        begin = steady_clock::now();
+        running = true;
     }
 };
 

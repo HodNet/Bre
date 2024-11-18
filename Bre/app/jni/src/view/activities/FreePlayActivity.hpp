@@ -29,7 +29,7 @@ class FreePlayActivity {
     SDL_FRect screenRect = {0, 0, 0, 0};
 
     // Dialogs
-    PauseDialog* pauseDialog;
+    PauseDialog* pauseDialog = nullptr;
 
     // Mediators
     InputMediator inputMediator;
@@ -65,25 +65,22 @@ public:
 
         freePlayWorld.enter(screen->w, screen->h);
 
-        pauseDialog = new PauseDialog(freePlayRenderer, screen->w, screen->h);
-
         levelBackgroundRenderer = LevelBackgroundRenderer(freePlayRenderer);
         playerRenderer = PlayerRenderer(freePlayRenderer);
         joystickRenderer = JoystickRenderer(freePlayRenderer);
         clonesRenderer = ClonesRenderer(freePlayRenderer);
         scoreRenderer = ScoreRenderer(freePlayRenderer);
         pauseButtonRenderer = IconButtonRenderer(freePlayWorld.getPauseButton(), freePlayRenderer);
-
-        freePlayWorld.getPauseButton()->setOnClickListener([&](){
-            freePlayWorld.getGame()->pause();
-        });
     }
 
     void run() {
 
         while (true) {
-            if(freePlayWorld.getGame()->getState() == GameState::PAUSED)
-                pauseDialog->run(frameBuffer);
+            if(freePlayWorld.isPaused()) {
+                pauseDialog = new PauseDialog(freePlayRenderer, freePlayWorld, frameBuffer);
+                pauseDialog->run();
+                delete pauseDialog; pauseDialog = nullptr;
+            }
 
             SDL_Event e;
 
@@ -126,11 +123,11 @@ public:
             joystickRenderer.render();
             clonesRenderer.render();
             //scoreRenderer.render(); purtroppo crasha. Ritenterò con future versioni di SDL_TTF
-            pauseButtonRenderer.render();
             SDL_SetRenderTarget(freePlayRenderer, NULL);
 
             SDL_RenderClear(freePlayRenderer);
             SDL_RenderTexture(freePlayRenderer, frameBuffer, 0, &screenRect);
+            pauseButtonRenderer.render();
             SDL_RenderPresent(freePlayRenderer);
         }
     }
@@ -142,9 +139,6 @@ public:
         clonesRenderer.destroy();
         scoreRenderer.destroy();
         pauseButtonRenderer.destroy();
-
-        pauseDialog->destroy();
-        delete pauseDialog; pauseDialog = nullptr;
 
         freePlayWorld.exit();
         SDL_DestroyTexture(frameBuffer);

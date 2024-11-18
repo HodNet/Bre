@@ -16,7 +16,7 @@
 #include "../../model/worlds/GameWorld.hpp"
 
 
-class JoystickRenderer : public Renderer {
+class JoystickRenderer : virtual public Renderer {
 
 private:
     Arrow* joystick = nullptr;
